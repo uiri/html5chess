@@ -5,21 +5,20 @@
 	#pieces {
 	    display:none
 	}
+	#canvas {
+	    float:left;
+	}
     </style>
     <script type="text/javascript">
     //{
 	var enpassant = new Object;
 	var stack = new Array;
-	var stackval = new Array;
-	var stackint = 0;
-	stackval.push(stackint);
-	stackint++;
-	stack.push(stackval);
 	var kingmoved = new Object;
 	var computerplayer = false;
 	kingmoved["white"] = false;
 	kingmoved["black"] = false;
 	var white = true;
+	var connected = false;
 	var pieces = new Array;
 	var squares = new Object;
 	var a = 0;
@@ -69,9 +68,13 @@
 	squares.two = [-1, -1];
 
 	function undo() {
-	    pieces = stack.pop();
-	    loadCanvas();
-	    white = !white;
+	    if (stack.length > 0) {
+		pieces = stack.pop();
+		loadCanvas();
+		white = !white;
+	    } else {
+		alert("No move to undo!");
+	    }
 	}
 
 	function makeMove() {
@@ -560,6 +563,43 @@
 	    context.closePath();
 	    context.fill();
 	}
+	
+	function connect() {
+	    var invalidname = true;
+	    var re = new RegExp("^[A-Za-z 0-9]+$");
+	    var multiple = 0;
+	    do {
+		if (multiple)
+		    var name = prompt("Your name can only contain letters, numbers and spaces");
+		else
+		    var name = prompt("Please enter your name:");
+		if (name.match(re))
+		    invalidname = false;
+		multiple++;
+	    } while (invalidname)
+	    var reqform = new FormData;
+	    reqform.append("player1", name);
+	    reqform.append("white", white);
+	    reqform.append("kingmovedwhite", kingmoved["white"]);
+	    reqform.append("kingmovedblack", kingmoved["black"]);
+	    reqform.append("board", pieces);
+	    var req = new XMLHttpRequest();
+	    req.open("POST", "https://uiri.servehttp.com/chess/chess.php");
+	    req.responseType = "json";
+	    req.onreadystatechange = function(e) {
+		if (req.readyState == 4) {
+		    if (req.response.player1 == name) {
+			alert("You are now playing "+req.response.player2+". It is your move; you are white");
+		    } else if (req.response.player2 == name) {
+			alert("You are playing "+req.response.player1+". You are black.");
+			document.getElementById("colour").innerHTML = "black";
+		    } else {
+			alert("Something has gone seriously wrong!");
+		    }
+		}
+	    }
+	    req.send(reqform);
+	}
 
 	function clickMe(e) {
 	    var x = e.pageX;
@@ -612,7 +652,11 @@
   </head>
   <body onLoad="loadCanvas()">
     <canvas onClick="clickMe(event)" id="canvas" width="400" height="400">What? No HTML5? Get Outta here!</canvas>
-    <input type="button" onClick="undo();" value="Undo!">
+    <div style='float:left'>
+      <input type="button" onClick="undo();" value="Undo!"><br>
+      <!-- <input type="button" onClick="connect();" value="Connect!"><br>
+      You are <span id="colour">white</span> -->
+    </div>
     <div id='pieces'>
       <img id="blackking" src="/chess/blackking.svg">
       <img id="blackqueen" src="/chess/blackqueen.svg">
