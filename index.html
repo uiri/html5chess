@@ -78,17 +78,6 @@
 	}
 
 	function makeMove() {
-	    var localpieces = new Array;
-	    var z1, z2;
-	    for (z1=0;z1<8;z1++) {
-		localpieces[z1] = new Array;
-		for (z2=0;z2<8;z2++) {
-		    localpieces[z1][z2] = new Object;
-		    localpieces[z1][z2].piece = pieces[z1][z2].piece;
-		    localpieces[z1][z2].color = pieces[z1][z2].color;
-		}
-	    }
-	    stack.push(localpieces);
 	    var oldpiece = new Object;
 	    oldpiece.color = pieces[squares.two[1]][squares.two[0]].color;
 	    oldpiece.piece = pieces[squares.two[1]][squares.two[0]].piece;
@@ -128,6 +117,7 @@
 		pieces[squares.two[1]][squares.two[0]].color = oldpiece.color;
 		return;
 	    }
+	    var castling = false;
 	    if (pieces[squares.two[1]][squares.two[0]].piece == "king") {
 		if (!(kingmoved[pieces[squares.two[1]][squares.two[0]].color])) {
 		    kingmoved[pieces[squares.two[1]][squares.two[0]].color] = true;
@@ -140,10 +130,24 @@
 			    squares.two = [squares.two[0]-1, squares.one[1]];
 			}
 			makeMove();
+			castling = true;
 			white = !(white);
 		    }
 		}
 		
+	    }
+	    if (!castling) {
+		var localpieces = new Array;
+		var z1, z2;
+		for (z1=0;z1<8;z1++) {
+		    localpieces[z1] = new Array;
+		    for (z2=0;z2<8;z2++) {
+			localpieces[z1][z2] = new Object;
+			localpieces[z1][z2].piece = pieces[z1][z2].piece;
+			localpieces[z1][z2].color = pieces[z1][z2].color;
+		    }
+		}
+		stack.push(localpieces);
 	    }
 	    if (pieces[squares.two[1]][squares.two[0]].piece == "pawn") {
 		if (white) {
@@ -588,14 +592,15 @@
 	    req.responseType = "json";
 	    req.onreadystatechange = function(e) {
 		if (req.readyState == 4) {
-		    if (req.response.player1 == name) {
+		    /*if (req.response.player1 == name) {
 			alert("You are now playing "+req.response.player2+". It is your move; you are white");
 		    } else if (req.response.player2 == name) {
 			alert("You are playing "+req.response.player1+". You are black.");
 			document.getElementById("colour").innerHTML = "black";
 		    } else {
 			alert("Something has gone seriously wrong!");
-		    }
+		    }*/
+		    document.getElementById("json").innerHTML = req.responseText;
 		}
 	    }
 	    req.send(reqform);
@@ -656,6 +661,7 @@
       <input type="button" onClick="undo();" value="Undo!"><br>
       <!-- <input type="button" onClick="connect();" value="Connect!"><br>
       You are <span id="colour">white</span> -->
+      <span id="json"></span>
     </div>
     <div id='pieces'>
       <img id="blackking" src="/chess/blackking.svg">
