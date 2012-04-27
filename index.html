@@ -595,7 +595,6 @@
 	    reqform.append("board", pieces.toSource());
 	    var req = new XMLHttpRequest();
 	    req.open("POST", "https://uiri.servehttp.com/chess/chess.php");
-	    req.responseType = "application/json";
 	    req.onreadystatechange = function(e) {
 		if (req.readyState == 4) {
 		    /*if (req.response.player1 == name) {
@@ -606,7 +605,7 @@
 		    } else {
 			alert("Something has gone seriously wrong!");
 		    }*/
-		    document.getElementById("json").innerHTML = req.responseText;
+		    document.getElementById("json").innerHTML = req.toSource();
 		}
 	    }
 	    req.send(reqform);
@@ -665,8 +664,8 @@
     <canvas onClick="clickMe(event)" id="canvas" width="400" height="400">What? No HTML5? Get Outta here!</canvas>
     <div style='float:left'>
       <input type="button" onClick="undo();" value="Undo!"><br>
-      <!-- <input type="button" onClick="connect();" value="Connect!"><br>
-      You are <span id="colour">white</span> -->
+      <input type="button" onClick="connect();" value="Connect!"><br>
+      You are <span id="colour">white</span>
       <span id="json"></span>
     </div>
     <div id='pieces'>
