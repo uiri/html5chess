@@ -69,7 +69,10 @@
 
 	function undo() {
 	    if (stack.length > 0) {
-		pieces = stack.pop();
+		var undoobj = stack.pop();
+		pieces = undoobj.pieces;
+		//if (undoobj.castle)
+		//    white = !white;
 		loadCanvas();
 		white = !white;
 	    } else {
@@ -78,6 +81,17 @@
 	}
 
 	function makeMove() {
+	    var localpieces = new Object;
+	    localpieces.pieces = new Array;
+	    var z1, z2;
+	    for (z1=0;z1<8;z1++) {
+		localpieces.pieces[z1] = new Array;
+		for (z2=0;z2<8;z2++) {
+		    localpieces.pieces[z1][z2] = new Object;
+		    localpieces.pieces[z1][z2].piece = pieces[z1][z2].piece;
+		    localpieces.pieces[z1][z2].color = pieces[z1][z2].color;
+		}
+	    }
 	    var oldpiece = new Object;
 	    oldpiece.color = pieces[squares.two[1]][squares.two[0]].color;
 	    oldpiece.piece = pieces[squares.two[1]][squares.two[0]].piece;
@@ -134,21 +148,13 @@
 			white = !(white);
 		    }
 		}
-		
 	    }
-	    if (!castling) {
-		var localpieces = new Array;
-		var z1, z2;
-		for (z1=0;z1<8;z1++) {
-		    localpieces[z1] = new Array;
-		    for (z2=0;z2<8;z2++) {
-			localpieces[z1][z2] = new Object;
-			localpieces[z1][z2].piece = pieces[z1][z2].piece;
-			localpieces[z1][z2].color = pieces[z1][z2].color;
-		    }
-		}
-		stack.push(localpieces);
+	    if (castling) {
+		localpieces.castle = true;
+	    } else {
+		localpieces.castle = false;
 	    }
+	    stack.push(localpieces);
 	    if (pieces[squares.two[1]][squares.two[0]].piece == "pawn") {
 		if (white) {
 		    if (squares.two[1] == 0)
@@ -586,10 +592,10 @@
 	    reqform.append("white", white);
 	    reqform.append("kingmovedwhite", kingmoved["white"]);
 	    reqform.append("kingmovedblack", kingmoved["black"]);
-	    reqform.append("board", pieces);
+	    reqform.append("board", pieces.toSource());
 	    var req = new XMLHttpRequest();
 	    req.open("POST", "https://uiri.servehttp.com/chess/chess.php");
-	    req.responseType = "json";
+	    req.responseType = "application/json";
 	    req.onreadystatechange = function(e) {
 		if (req.readyState == 4) {
 		    /*if (req.response.player1 == name) {
