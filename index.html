@@ -9,6 +9,8 @@
 	    float:left;
 	}
     </style>
+    <script type="text/javascript" src="chess.js"></script>
+    <script type="text/javascript" src="ai.js"></script>
     <script type="text/javascript">
     /* Copyright 2012 Uiri Noyb
        This program is free software: you can redistribute it and/or modify
@@ -27,60 +29,27 @@
        AT compucrunch dot com
     */ 
     //{
-	var enpassant = new Object;
+	var computerplayer = new Object();
+	computerplayer.white = false;
+	computerplayer.black = false;
+	var connected = false;
 	var stack = new Array;
 	var restack = new Array;
-	var computerplayer = false;
-	var white = true;
-	var connected = false;
-	var pieces = new Array;
 	var squares = new Object;
-	var a = 0;
-	for (a=0;a<8;a++) {
-	    pieces[a] = new Array;
-	    var b = 0;
-	    for (b=0;b<8;b++) {
-		pieces[a][b] = new Object;
-		pieces[a][b].moved = false;
-		if (a < 2) {
-		    pieces[a][b].color = "black";
-		    if (a == 1) {
-			pieces[a][b].piece = "pawn";
-		    } else if (b < 1 || b > 6) {
-			pieces[a][b].piece = "rook";
-		    } else if (b < 2 || b > 5) {
-			pieces[a][b].piece = "knight";
-		    } else if (b < 3 || b > 4) {
-			pieces[a][b].piece = "bishop";
-		    } else if (b == 3) {
-			pieces[a][b].piece = "queen";
-		    } else {
-			pieces[a][b].piece = "king";
-		    }
-		} else if (a > 5) {
-		    pieces[a][b].color = "white";
-		    if (a == 6) {
-			pieces[a][b].piece = "pawn";
-		    } else if (b < 1 || b > 6) {
-			pieces[a][b].piece = "rook";
-		    } else if (b < 2 || b > 5) {
-			pieces[a][b].piece = "knight";
-		    } else if (b < 3 || b > 4) {
-			pieces[a][b].piece = "bishop";
-		    } else if (b == 3) {
-			pieces[a][b].piece = "queen";
-		    } else {
-			pieces[a][b].piece = "king";
-		    }
-		} else {
-		    pieces[a][b].color = null;
-		    pieces[a][b].piece = null;
-		}
-	    }
-	}
-
 	squares.one = [-1, -1];
 	squares.two = [-1, -1];
+	var white = true;
+
+        function moveThroughRedo(localpieces) {
+	    if (restack.length > 0)
+		restack.pop();
+	    stack.push(localpieces);
+	}
+
+	function fixRedo(castling) {
+	    if (castling)
+		stack.pop();
+	}
 
 	function undo() {
 	    if (stack.length > 0) {
@@ -106,553 +75,23 @@
 	    }
 	}
 
-	function makeMove() {
-	    var localpieces = new Array;
-	    var z1, z2;
-	    for (z1=0;z1<8;z1++) {
-		localpieces[z1] = new Array;
-		for (z2=0;z2<8;z2++) {
-		    localpieces[z1][z2] = new Object;
-		    localpieces[z1][z2].piece = pieces[z1][z2].piece;
-		    localpieces[z1][z2].color = pieces[z1][z2].color;
-		    localpieces[z1][z2].moved = pieces[z1][z2].moved;
-		}
-	    }
-	    var oldpiece = new Object;
-	    oldpiece.color = pieces[squares.two[1]][squares.two[0]].color;
-	    oldpiece.piece = pieces[squares.two[1]][squares.two[0]].piece;
-	    pieces[squares.two[1]][squares.two[0]].color = pieces[squares.one[1]][squares.one[0]].color;
-	    pieces[squares.two[1]][squares.two[0]].piece = pieces[squares.one[1]][squares.one[0]].piece;
-	    pieces[squares.one[1]][squares.one[0]].color = null;
-	    pieces[squares.one[1]][squares.one[0]].piece = null;
-	    pieces[squares.two[1]][squares.two[0]].moved = true;
-	    var blackkingcoord = new Array;
-	    var whitekingcoord = new Array;
-	    var i, j;
-	    for (i=0;i<8;i++)
-		for (j=0;j<8;j++)
-		    if (pieces[i][j].piece == "king")
-			if (pieces[i][j].color == "white") {
-			    whitekingcoord[0] = i;
-			    whitekingcoord[1] = j;
-			} else if (pieces[i][j].color == "black") {
-			    blackkingcoord[0] = i;
-			    blackkingcoord[1] = j;
-			}
-	    var blackcheck = false;
-	    var whitecheck = false;
-	    var checkmate = false;
-	    if (checkCheck(blackkingcoord[0], blackkingcoord[1], "white")) {
-		blackcheck = true;
-		if (checkCheckmate(blackkingcoord[0], blackkingcoord[1], "white"))
-		    checkmate = true;
-	    }
-	    if (checkCheck(whitekingcoord[0], whitekingcoord[1], "black")) {
-		whitecheck = true;
-		if (checkCheckmate(whitekingcoord[0], whitekingcoord[1], "black"))
-		    checkmate = true;
-	    }
-	    if (pieces[squares.two[1]][squares.two[0]].piece == "king")
-		if (Math.abs(squares.two[0]-squares.one[0]) == 2) {
-		    var i;
-		    if (white) {
-			if (squares.two[0] < squares.one[0]) {
-			    for (i=squares.two[0];i<squares.one[0];i++)
-				if (checkCheck(squares.two[1], i, "black"))
-				    whitecheck = true;
-			} else {
-			    for (i=squares.one[0];i<squares.two[0];i++)
-				if (checkCheck(squares.two[1], i, "black"))
-				    whitecheck = true;			    
-			}
-		    } else {
-			if (squares.two[0] < squares.one[0]) {
-			    for (i=squares.two[0];i<squares.one[0];i++)
-				if (checkCheck(squares.two[1], i, "white"))
-				    blackcheck = true;
-			} else {
-			    for (i=squares.one[0];i<squares.two[0];i++)
-				if (checkCheck(squares.two[1], i, "white"))
-				    blackcheck = true;
-			}
-		    }
-		}
-	    if ((white && whitecheck) || (!(white) && blackcheck)) {
-		alert("You can't do that, that's check");
-		pieces[squares.one[1]][squares.one[0]].color = pieces[squares.two[1]][squares.two[0]].color;
-		pieces[squares.one[1]][squares.one[0]].piece = pieces[squares.two[1]][squares.two[0]].piece;
-		pieces[squares.two[1]][squares.two[0]].piece = oldpiece.piece;
-		pieces[squares.two[1]][squares.two[0]].color = oldpiece.color;
-		return;
-	    }
-	    var castling = false;
-	    if (pieces[squares.two[1]][squares.two[0]].piece == "king" && !(pieces[squares.one[1]][squares.one[0]].moved)) {
-		if (Math.abs(squares.two[0]-squares.one[0]) == 2) {
-		    if (squares.two[0] - squares.one[0] == -2) {
-			squares.one = [squares.two[0]-2, squares.one[1]];
-			squares.two = [squares.two[0]+1, squares.two[1]];
-		    } else if (squares.one[0] - squares.two[0] == -2) {
-			squares.one = [squares.two[0]+1, squares.one[1]];
-			squares.two = [squares.two[0]-1, squares.one[1]];
-		    }
-		    makeMove();
-		    castling = true;
-		    white = !(white);
-		}
-	    }
-	    if (restack.length > 0)
-		restack.pop();
-	    stack.push(localpieces);
-	    if (pieces[squares.two[1]][squares.two[0]].piece == "pawn") {
-		if (white) {
-		    if (squares.two[1] == 0)
-			promote(squares.two[1], squares.two[0]);
-		    if (squares.one[0] in enpassant && squares.two[0] == enpassant[squares.one[0]]) {
-			    pieces[squares.two[1]+1][squares.two[0]].piece = null;
-			    pieces[squares.two[1]+1][squares.two[0]].color = null;
-		    }
-		} else {
-		    if (squares.two[1] == 7)
-			promote(squares.two[1], squares.two[0]);
-		    if (squares.one[0] in enpassant && enpassant[squares.one[0]] == squares.two[0]) {
-			pieces[squares.two[1]-1][squares.two[0]].piece = null;
-			pieces[squares.two[1]-1][squares.two[0]].color = null;
-		    }
-		}
-		enpassant = new Object;
-		if (Math.abs(squares.two[1] - squares.two[0]) == 2) {
-		    if (0 < squares.two[0])
-			if (pieces[squares.two[1]][squares.two[0]-1].piece == "pawn")
-			    enpassant[squares.two[0]-1] = squares.two[0];
-		    if (squares.two[0] < 7)
-			if (pieces[squares.two[1]][squares.two[0]+1].piece == "pawn")
-			    enpassant[squares.two[0]+1] = squares.two[0];
-		}
-	    }
-	    if (checkmate) {
-		alert("Checkmate.");
-	    } else {
-		if (whitecheck && !(white))
-		    alert("White is in check");
-		if (white && blackcheck)
-		    alert("Black is in check");
-	    }
-	    white = !(white);
-	}
-
-	function promote(x, y) {
+	function promote() {
 	    var promoted = false;
 	    while (!promoted) {
 		queen = confirm("Do you want to promote to a queen?");
-		if (queen) {
-		    pieces[x][y].piece = "queen";
-		    break;
-		}
+		if (queen)
+		    return "queen";
 		knight = confirm("Do you want to promote to a knight?");
-		if (knight) {
-		    pieces[x][y].piece = "knight";
-		    break;
-		}
+		if (knight)
+		    return "knight";
 		rook = confirm("Do you want to promote to a rook?");
-		if (rook) {
-		    pieces[x][y].piece = "rook";
-		    break;
-		}
+		if (rook)
+		    return "rook";
 		bishop = confirm("Do you want to promote to a bishop?");
-		if (bishop) {
-		    pieces[x][y].piece = "rook";
-		    break;
-		}
+		if (bishop)
+		    return "bishop";
 		alert("You have to promote your pawn");
 	    }
-	}
-
-	function validMove(x,y,a,b) {
-	    if (b != -1) {
-		if ((pieces[a][b].color == "white" && white) || (pieces[a][b].color == "black" && !(white))) {
-		    if ((pieces[x][y].color !=  "white" && white) || (pieces[x][y].color != "black" && !(white))) {
-			switch (pieces[a][b].piece) {
-			case "knight":
-			    var n = Math.abs(x-a);
-			    var o = Math.abs(y-b);
-			    if (n+o == 3 && o != 0 && n != 0) {
-				return true;
-			    }
-			    break;
-			case "queen":
-			case "rook":
-			    if (a == x || b == y) {
-				if (a != x && b == y) {
-				    if (a < x) {
-					for (x--;a<x;x--) {
-					    if (pieces[x][y].color != null) {
-						return false;
-					    }
-					}
-				    } else if (a > x) {
-					for (x++;a>x;x++) {
-					    if (pieces[x][y].color != null) {
-						return false;
-					    }
-					}
-				    }
-				} else if (b != y && a == x) {
-				    if (b < y) {
-					for (y--;b<y;y--) {
-					    if (pieces[x][y].color != null) {
-						return false;
-					    }
-					}
-				    } else if (b > y) {
-					for (y++;b>y;y++) {
-					    if (pieces[x][y].color != null) {
-						return false;
-					    }
-					}
-				    }
-				}
-				return true;
-			    }
-			    if (pieces[a][b].piece == "rook") {
-				break;
-			    }
-			case "bishop":
-			    if (x+y == a+b || 
-				x-y == a-b) {
-				if (x+y == a+b) {
-				    if (x > a) {
-					y++;
-					for(x--;x!=a;x--) {
-					    if (pieces[x][y].color != null) {
-						return false;
-					    }
-					    y++;
-					}
-				    } else if (x < a) {
-					y--;
-					for(x++;x!=a;x++) {
-					    if (pieces[x][y].color != null) {
-						return false;
-					    }
-					    y--;
-					}
-				    }
-				}
-				if (x-y == a-b) {
-				    if (x > a) {
-					y--
-					for(x--;x!=a;x--) {
-					    if (pieces[x][y].color != null) {
-						return false;
-					    }
-					    y--;
-					}
-				    } else if (x < a) {
-					y++;
-					for(x++;x!=a;x++) {
-					    if (pieces[x][y].color != null) {
-						return false;
-					    }
-					    y++;
-					}
-				    }
-				}
-				return true;
-			    }
-			    break;
-			case "king":
-			    var n = Math.abs(x-a);
-			    var o = Math.abs(y-b);
-			    if (n < 2 && o < 2) {
-				return true;
-			    } else {
-				if (n == 0 && o == 2 && !(pieces[a][b].moved)) {
-				    if ((pieces[x][y-1].piece == null && pieces[x][y+1].piece == "rook" && !(pieces[x][y+1].moved)) || (pieces[x][y-2].piece == "rook" && !(pieces[x][y-2].moved) && pieces[x][y-1].piece == null && pieces[x][y+1].piece == null)) {
-					return true;
-				    }
-				}
-			    }
-			    break;
-			case "pawn":
-			    if ((pieces[a][b].color == "white" && a-x == 1 &&
-				 ((b == y && pieces[x][y].color == null) ||
-				  (Math.abs(y-b) == 1 && pieces[x][y].color == "black"))) ||
-				(pieces[a][b].color == "black" && x-a == 1 &&
-				 ((b == y && pieces[x][y].color == null) ||
-				  (Math.abs(y-b) == 1 && pieces[x][y].color == "white"))))
-				return true;
-			    if ((pieces[a][b].color == "white" && a-x == 2 &&
-				 b == y && pieces[a-1][b].color == null &&
-				 a == 6 && pieces[a-2][b].color == null) ||
-				(pieces[a][b].color == "black" && x-a == 2 &&
-				 b == y && pieces[a+1][b].color == null &&
-				 a == 1 && pieces[a+2][b].color == null))
-				return true;
-			    if (b in enpassant)
-				if ((white && a == 3 &&
-				     pieces[x+1][y].piece == "pawn") ||
-				    (!(white) && a == 4 &&
-				     pieces[x-1][y].piece == "pawn"))
-				    return true;
-			    break;
-			}
-		    }
-		}
-	    }
-	    return false;
-	}
-
-	function checkBlockCheck(x, y, xd, yd, oppcolor) {
-	    var g,h;
-	    for (g=0;g<8;g++)
-		for (h=0;h<8;h++)
-		    if (pieces[h][g].color != null &&
-			pieces[h][g].color != oppcolor && 
-			pieces[h][g].piece != "king") {
-			var i,j,stop;
-			stop = false;
-			i=x;j=y;
-			for (i+=xd;i>0;i+=xd)
-			    if (i<8) {
-				for (j+=yd;j>0;j+=yd)
-				    if (j<8) {
-					if (pieces[i][j].color != null) {
-					    stop = true;
-					    break;
-					}
-					white = !white;
-					if (validMove(i,j,h,g)) {
-					    white = !white;
-					    return false;
-					} else {
-					    white = !white;
-					    break;
-					}
-				    } else
-					stop = true;
-					break;
-				if (stop) {
-				    stop = false;
-				    break;
-				}
-			    } else
-				break;
-		    }
-	    return true;
-	}
-
-	function checkCheckmate(x, y, oppcolor) {
-	    if (0 < x) {
-		if (0 < y)
-		    if (pieces[x-1][y-1].color == null || pieces[x-1][y-1].color == oppcolor)
-			if (checkCheck(x-1, y-1, oppcolor) < 2) {
-			    if (!checkCheck(x-1, y-1, oppcolor))
-				return false;
-			    if (!checkBlockCheck(x, y, -1,-1, oppcolor))
-				return false;
-			}
-		if (pieces[x-1][y].color == null || pieces[x-1][y].color == oppcolor)
-		    if (checkCheck(x-1,y,oppcolor) < 2) {
-			if (!checkCheck(x-1,y,oppcolor))
-			    return false;
-			if (!checkBlockCheck(x, y, -1, 0, oppcolor))
-			    return false;
-		    }
-		if (y < 7)
-		    if (pieces[x-1][y+1].color == null || pieces[x-1][y+1].color == oppcolor)
-			if (checkCheck(x-1,y+1, oppcolor) < 2) {
-			    if (!checkCheck(x-1, y+1, oppcolor))
-				return false;
-			    if (!checkBlockCheck(x, y, -1,1, oppcolor))
-				return false;
-			}
-	    }
-	    if (x < 7) {
-		if (0 < y)
-		    if (pieces[x+1][y-1].color == null || pieces[x+1][y-1].color == oppcolor)
-			if (checkCheck(x+1,y-1, oppcolor) < 2) {
-			    if (!checkCheck(x+1, y-1, oppcolor))
-				return false;
-			    if (!checkBlockCheck(x, y, 1,-1, oppcolor))
-				return false;
-			}
-		if (pieces[x+1][y].color == null || pieces[x+1][y].color == oppcolor )
-		    if (checkCheck(x+1,y,oppcolor) < 2) {
-			if (!checkCheck(x+1,y,oppcolor))
-			    return false;
-			if (!checkBlockCheck(x, y, 1, 0, oppcolor))
-			    return false;
-		    }
-		if (y < 7)
-		    if (pieces[x+1][y+1].color == null || pieces[x+1][y+1].color == oppcolor)
-			if (checkCheck(x+1, y+1) < 2) {
-			    if (!checkCheck(x+1, y+1, oppcolor))
-				return false;
-			    if (!checkBlockCheck(x, y, 1, 1, oppcolor))
-				return false;
-			}
-	    }
-	    if (0 < y)
-		if (pieces[x][y-1].color == null || pieces[x][y-1].color == oppcolor)
-		    if (checkCheck(x, y-1, oppcolor) < 2) {
-			if (!checkCheck(x, y-1, oppcolor))
-			    return false;
-			if (checkBlockCheck(x, y, 0, -1, oppcolor))
-			    return false;
-		    }
-	    if (y < 7)
-		if (pieces[x][y+1].color == null || pieces[x][y+1].color == oppcolor)
-		    if (checkCheck(x, y+1, oppcolor) < 2) {
-			if (!checkCheck(x, y+1, oppcolor))
-			    return false;
-			if (!checkBlockCheck(x, y, 0, 1, oppcolor))
-			    return false;
-		    }
-	    //if (checkCheck(x, y, oppcolor) > 1)
-	    return true;
-	    //return false;
-	}
-
-	function checkCheck(x, y, oppcolor) {
-	    var retval = 0;
-	    var i = x;
-	    var j = y;
-	    if (0 < x) {
-		if (0 < y)
-		    if (pieces[x-1][y-1].piece == "king" && pieces[x-1][y-1].color == oppcolor)
-			retval += 2;
-		if (pieces[x-1][y].piece == "king" && pieces[x-1][y].color == oppcolor)
-		    retval += 2;
-		if (y < 7)
-		    if (pieces[x-1][y+1].piece == "king" && pieces[x-1][y+1].color == oppcolor)
-			retval += 2;
-	    }
-	    if (x < 7) {
-		if (0 < y)
-		    if (pieces[x+1][y-1].piece == "king" && pieces[x+1][y-1].color == oppcolor)
-			retval += 2;
-		if (pieces[x+1][y].piece == "king" && pieces[x+1][y].color == oppcolor)
-		    retval += 2;
-		if (y < 7)
-		    if (pieces[x+1][y+1].piece == "king" && pieces[x+1][y+1].color == oppcolor)
-			retval += 2;
-	    }
-	    if (0 < y)
-		if (pieces[x][y-1].color == oppcolor && pieces[x][y-1].piece == "king")
-		    retval += 2;
-	    if (y < 7)
-		if (pieces[x][y+1].color == oppcolor && pieces[x][y+1].piece == "king")
-		    retval += 2;
-	    knightmoves = new Array;
-	    knightmoves[0] = [1,2];knightmoves[1] = [-1,2];knightmoves[2] = [-1,-2];knightmoves[3] = [1,-2];
-	    knightmoves[4] = [2,1];knightmoves[5] = [-2,1];knightmoves[6] = [-2,-1];knightmoves[7] = [2,-1];
-	    for (spot in knightmoves)
-		if (-1 < x+knightmoves[spot][0] && x+knightmoves[spot][0] < 8 && -1 < y+knightmoves[spot][1] && y+knightmoves[spot][1] < 8) {
-		    if (pieces[x+knightmoves[spot][0]][y+knightmoves[spot][1]].color == oppcolor && pieces[x+knightmoves[spot][0]][y+knightmoves[spot][1]].piece == "knight") {
-			retval += 2;
-		    }
-		}
-	    if (oppcolor == "white" && x+1 < 8) {
-		if (y+1 < 8)
-		    if (pieces[x+1][y+1].piece == "pawn" && pieces[x+1][y+1].color == oppcolor)
-			retval += 2;
-		if (-1 < y-1)
-		    if (pieces[x+1][y-1].piece == "pawn" && pieces[x+1][y-1].color == oppcolor)
-			retval += 2;
-	    }
-	    if (oppcolor == "black" && x > 0) {
-		if (y+1 < 8)
-		    if (pieces[x-1][y+1].piece == "pawn" && pieces[x-1][y+1].color == oppcolor)
-			retval += 2;
-		if (-1 < y-1)
-		    if (pieces[x-1][y-1].piece == "pawn" && pieces[x-1][y-1].color == oppcolor)
-			retval += 2;
-	    }
-	    i=x;
-	    j=y;
-	    i++;
-	    j++;
-	    while(-1<i && i<8 && -1<j && j<8) {
-		if (pieces[i][j].color == oppcolor)
-		    if (pieces[i][j].piece == "bishop" || pieces[i][j].piece == "queen")
-			retval++;
-		if (pieces[i][j].color != null)
-		    break;
-		i++;
-		j++;
-	    }
-	    i=x;
-	    j=y;
-	    i++;
-	    j--;
-	    while(-1<i && i<8 && -1<j && j<8) {
-		if (pieces[i][j].color == oppcolor)
-		    if (pieces[i][j].piece == "bishop" || pieces[i][j].piece == "queen")
-			retval++;
-		if (pieces[i][j].color != null)
-		    break;
-		i++;
-		j--;
-	    }
-	    i=x;
-	    j=y;
-	    i--;
-	    j++;
-	    while(-1<i && i<8 && -1<j && j<8) {
-		if (pieces[i][j].color == oppcolor)
-		    if (pieces[i][j].piece == "bishop" || pieces[i][j].piece == "queen")
-			retval++;
-		if (pieces[i][j].color != null)
-		    break;
-		i--;
-		j++;
-	    }
-	    i=x;
-	    j=y;
-	    i--;
-	    j--;
-	    while(-1<i && i<8 && -1<j && j<8) {
-		if (pieces[i][j].color == oppcolor)
-		    if (pieces[i][j].piece == "bishop" || pieces[i][j].piece == "queen")
-			retval++;
-		if (pieces[i][j].color != null)
-		    break;
-		i--;
-		j--;
-	    }
-	    j=y;
-	    for (i=x+1;-1<i && i<8;i++) {
-		if (pieces[i][j].color == oppcolor)
-		    if (pieces[i][j].piece == "rook" || pieces[i][j].piece == "queen")
-			retval++;
-		if (pieces[i][j].color != null)
-		    break;
-	    }
-	    j=x;
-	    for (i=y+1;-1<i && i<8;i++) {
-		if (pieces[j][i].color == oppcolor)
-		    if (pieces[j][i].piece == "rook" || pieces[j][i].piece == "queen")
-			retval++;
-		if (pieces[j][i].color != null)
-		    break;
-	    }
-	    j=y;
-	    for (i=x-1;-1<i && i<8;i--) {
-		if (pieces[i][j].color == oppcolor)
-		    if (pieces[i][j].piece == "rook" || pieces[i][j].piece == "queen")
-			retval++;
-		if (pieces[i][j].color != null)
-		    break;
-	    }
-	    j=x;
-	    for (i=y-1;-1<i && i<8;i--) {
-		if (pieces[j][i].color == oppcolor)
-		    if (pieces[j][i].piece == "rook" || pieces[j][i].piece == "queen")
-			retval++;
-		if (pieces[j][i].color != null)
-		    break;
-	    }
-	    return retval;
 	}
 
 	function drawPiece(context,x,y) {
@@ -694,7 +133,7 @@
 	    context.fill();
 	}
 	
-	function connect() {
+	/*function connect() {
 	    var invalidname = true;
 	    var re = new RegExp("^[A-Za-z 0-9]+$");
 	    var multiple = 0;
@@ -722,35 +161,49 @@
 			document.getElementById("colour").innerHTML = "black";
 		    } else {
 			alert("Something has gone seriously wrong!");
-		    }*/
+		    }
 		    document.getElementById("json").innerHTML = req.toSource();
 		}
-	    }
+            }
 	    req.send(reqform);
-	}
+	}*/
 
 	function clickMe(e) {
 	    var x = e.pageX;
 	    var y = e.pageY;
+	    var oppcolor;
+	    if (white)
+		oppcolor = "black";
+	    else
+		oppcolor = "white";
 	    while (x%50 != 0)
 		x -= 1;
 	    while (y%50 != 0)
 		y -= 1;
-	    x /= 50
-	    y /= 50
+	    x /= 50;
+	    y /= 50;
 	    if (squares.one[0] == -1) {
-		if ((pieces[y][x].color == "white" && white) || (pieces[y][x].color == "black" && !(white))) {
+		if (pieces[y][x].color != null && pieces[y][x].color != oppcolor) {
 		    squares.one = [x,y];
 		}
 	    } else if (squares.one[0] == x && squares.one[1] == y) {
 		squares.one = [-1,-1];
 		squares.two = [-1,-1];
 	    } else if (squares.two[0] == x && squares.two[1] == y) {
-		makeMove();
+		var samecolor;
+		if (white)
+		    samecolor = "white";
+		else
+		    samecolor = "black";
+		if (makeMove(squares.one[1], squares.one[0], squares.two[1], squares.two[0],samecolor,false))
+		    if (computerplayer[oppcolor]) {
+			makeAMoveComputer(!white);
+		    } else
+			white = !(white);
 		squares.one = [-1,-1];
 		squares.two = [-1,-1];
 	    } else {
-		if (validMove(y,x,squares.one[1],squares.one[0])) {
+		if (validMove(y,x,squares.one[1],squares.one[0],oppcolor)) {
 		    squares.two = [x,y];
 		} else {
 		    squares.two = [-1,-1];
@@ -776,6 +229,25 @@
 	    context.closePath();
 	    drawPiece(context,y,x);
 	}
+
+	function toggleComputerPlayer(color) {
+	    computerplayer[color] = !(computerplayer[color]);
+	}
+	
+	function makeAMoveComputer(black) {
+	    var oppcolor, samecolor;
+	    if (black) {
+		oppcolor = "white";
+	    } else {
+		oppcolor = "black";
+	    }
+	    var mtm = aiMakeMove(oppcolor);
+	    if (mtm)
+		if (makeMove(mtm[0],mtm[1],mtm[2],mtm[3],mtm[4],false))
+		    if (computerplayer[oppcolor])
+		        white = !white;
+	    loadCanvas();
+	}
     </script>
   </head>
   <body onLoad="loadCanvas()">
@@ -783,6 +255,9 @@
     <div style='float:left'>
       <input type="button" onClick="undo();" value="Undo!"><br>
       <input type="button" onClick="redo();" value="Redo!"><br>
+      Computer Player<br>
+      <label for="compboxwhite">White</label><input onClick="toggleComputerPlayer('white')" type="checkbox" id="compboxwhite">&nbsp;&nbsp;<label for="compboxblack">Black</label><input onClick="toggleComputerPlayer('black')" type="checkbox" id="compboxblack"><br>
+      <input type="button" onClick="makeAMoveComputer(white);" value="Make A Move, Computer!">
       <!--<input type="button" onClick="connect();" value="Connect!"><br>
       You are <span id="colour">white</span> -->
       <span id="json"></span>
@@ -801,5 +276,6 @@
       <img id="whiteknight" src="/chess/whiteknight.svg">
       <img id="whitepawn" src="/chess/whitepawn.svg">
     </div>
+    <script>computerplayer.white = document.getElementById("compboxwhite").checked;computerplayer.black = document.getElementById("compboxblack").checked;</script>
   </body>
 </html>
