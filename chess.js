@@ -65,7 +65,7 @@ function promote() { return "queen"; }
 function moveThroughRedo(localpieces) {}
 function fixRedo(castling) {}
 
-function makeMove(x1, y1, x2, y2, oppcolor, sym) {
+function makeMove(x1, y1, x2, y2, oppcolor, sym, ai) {
     var localpieces = new Array;
     var z1, z2;
     for (z1=0;z1<8;z1++) {
@@ -94,28 +94,61 @@ function makeMove(x1, y1, x2, y2, oppcolor, sym) {
 		if (pieces[i][j].color == "white") {
 		    whitekingcoord[0] = i;
 		    whitekingcoord[1] = j;
-		} else if (pieces[i][j].color == "black") {
+		} else {
 		    blackkingcoord[0] = i;
 		    blackkingcoord[1] = j;
 		}
+    if (pieces[x2][y2].piece == "pawn") {
+	var k;
+	if (oppcolor == "white") {
+	    if (x2 == 0)
+		if (!sym && !ai) {
+		    pieces[x2][y2].piece = promote();
+		} else
+		    pieces[x2][y2].piece = "queen";
+	    k=1;
+	} else {
+	    if (x2 == 7)
+		if (!sym && !ai) {
+		    pieces[x2][y2].piece = promote();
+		} else
+		    pieces[x2][y2].piece = "queen";
+	    k=-1;
+	}
+	if (y1 in enpassant && y2 == enpassant[y1]) {
+	    pieces[x2+k][y2].piece = null;
+	    pieces[x2+k][y2].color = null;
+	}
+	enpassant = new Object;
+	if (Math.abs(x2 - x1) == 2) {
+	    if (0 < y2)
+		if (pieces[x2][y2-1].piece == "pawn")
+		    enpassant[y2-1] = y2;
+	    if (y2 < 7)
+		if (pieces[x2][y2+1].piece == "pawn")
+		    enpassant[y2+1] = y2;
+	}
+    }
     var checkvar = new Object();
     checkvar["black"] = false;
     checkvar["white"] = false;
     var checkmate = false;
     if (checkCheck(blackkingcoord[0], blackkingcoord[1], "white")) {
 	checkvar["black"] = true;
-	var oldking = new Object();
-	oldking.color = pieces[blackkingcoord[0]][blackkingcoord[1]].color;
-	oldking.piece = pieces[blackkingcoord[0]][blackkingcoord[1]].piece;
-	pieces[blackkingcoord[0]][blackkingcoord[1]].color = null;
-	pieces[blackkingcoord[0]][blackkingcoord[1]].piece = null;
-	if (checkCheckmate(blackkingcoord[0], blackkingcoord[1], "white"))
-	    checkmate = true;
-	pieces[blackkingcoord[0]][blackkingcoord[1]].piece = oldking.piece;
-	pieces[blackkingcoord[0]][blackkingcoord[1]].color = oldking.color;
     }
     if (checkCheck(whitekingcoord[0], whitekingcoord[1], "black")) {
 	checkvar["white"] = true;
+    }
+    var oldking = new Object();
+    oldking.color = pieces[blackkingcoord[0]][blackkingcoord[1]].color;
+    oldking.piece = pieces[blackkingcoord[0]][blackkingcoord[1]].piece;
+    pieces[blackkingcoord[0]][blackkingcoord[1]].color = null;
+    pieces[blackkingcoord[0]][blackkingcoord[1]].piece = null;
+    if (checkCheckmate(blackkingcoord[0], blackkingcoord[1], "white"))
+	checkmate = true;
+    pieces[blackkingcoord[0]][blackkingcoord[1]].piece = oldking.piece;
+    pieces[blackkingcoord[0]][blackkingcoord[1]].color = oldking.color;
+    if (!checkmate) {
 	var oldking = new Object();
 	oldking.color = pieces[whitekingcoord[0]][whitekingcoord[1]].color;
 	oldking.piece = pieces[whitekingcoord[0]][whitekingcoord[1]].piece;
@@ -156,48 +189,45 @@ function makeMove(x1, y1, x2, y2, oppcolor, sym) {
 	moveThroughRedo(localpieces);
     var castling = false;
     if (pieces[x2][y2].piece == "king" && !(pieces[x1][y1].moved)) {
-	if (Math.abs(y2-y1) == 2) {
+	if (Math.abs(y2-y1) == 2 && !checkCheck(x1,y1,oppcolor)) {
 	    if (y2 - y1 == -2) {
-		makeMove(x1, y2-2, x2, y2+1,oppcolor,sym);
-	    } else if (y1 - y2 == -2)
-		makeMove(x1, y2+1, x2, y2-1,oppcolor,sym);
-	    castling = true;
+		if (makeMove(x1, y2-2, x2, y2+1,oppcolor,sym,ai))
+		    castling = true;
+		else {
+		    if (!sym)
+			alert("You can't do that, that's check");
+		    pieces[x1][y1].color = pieces[x2][y2].color;
+		    pieces[x1][y1].piece = pieces[x2][y2].piece;
+		    pieces[x2][y2].piece = oldpiece.piece;
+		    pieces[x2][y2].color = oldpiece.color;
+		    return false;
+		}
+	    } else if (y1 - y2 == -2) {
+		if (makeMove(x1, y2+1, x2, y2-1,oppcolor,sym,ai))
+		    castling = true;
+		else {
+		    if (!sym)
+			alert("You can't do that, that's check");
+		    pieces[x1][y1].color = pieces[x2][y2].color;
+		    pieces[x1][y1].piece = pieces[x2][y2].piece;
+		    pieces[x2][y2].piece = oldpiece.piece;
+		    pieces[x2][y2].color = oldpiece.color;
+		    return false;		    
+		}
+	    }
 	}
     }
     if (!sym)
 	fixRedo(castling);
-    if (pieces[x2][y2].piece == "pawn") {
-	var k;
-	if (!sym)
-	    if (oppcolor == "white") {
-		if (x2 == 0)
-		    pieces[x2][y2].piece = promote();
-		k=-1;
-	    } else {
-		if (x2 == 7)
-		    pieces[x2][y2].piece = promote();
-		k=1;
-	    }
-	if (y1 in enpassant && y2 == enpassant[y1]) {
-	    pieces[x2+k][y2].piece = null;
-	    pieces[x2+k][y2].color = null;
-	}
-	enpassant = new Object;
-	if (Math.abs(x2 - x1) == 2) {
-	    if (0 < y2)
-		if (pieces[x2][y2-1].piece == "pawn")
-		    enpassant[y2-1] = y2;
-	    if (y2 < 7)
-		if (pieces[x2][y2+1].piece == "pawn")
-		    enpassant[y2+1] = y2;
-	}
-    }
     if (oppcolor == "white")
 	oppcolor = "black";
     else
 	oppcolor = "white";
     if (checkmate && !sym) {
-	alert("Checkmate. "+oppcolor[0].toUpperCase()+oppcolor.slice(1)+" loses.");
+	if (checkvar["white"])
+	    alert("Checkmate. Black wins.");
+	else if (checkvar["black"])
+	    alert("Checkmate. White wins.");
     } else {
 	if (checkvar[oppcolor] && !sym)
 	    alert(oppcolor[0].toUpperCase()+oppcolor.slice(1)+" is in check");
@@ -347,19 +377,33 @@ function validMove(x,y,a,b,oppcolor) {
 }
 
 function checkBlockCheck(x, y, xd, yd, oppcolor) {
-    var k,l,stop,cont;
+    var k,l,stop,cont,kx,ky,z1,z2;
     stop = false;
     cont = false;
+    localpieces = new Array();
+    for (z1=0;z1<8;z1++) {
+	localpieces.push(new Array());
+	for (z2=0;z2<8;z2++) {
+	    localpieces[z1].push(new Object());
+	    localpieces[z1][z2].piece = pieces[z1][z2].piece;
+	    localpieces[z1][z2].color = pieces[z1][z2].color;
+	    localpieces[z1][z2].moved = pieces[z1][z2].moved;
+	}
+    }
     k=x;l=y;
     while(!stop) {
 	k+=xd;l+=yd;
 	if (-1 < k && k < 8 && -1 < l && l < 8) {
-	    if (pieces[k][l].color != null)
+	    if (pieces[k][l].color != null) {
+		if (pieces[k][l].color != oppcolor && pieces[k][l].piece == "king") {
+		    kx = k; ky = l;
+		}
 		if ((pieces[k][l].piece == "bishop" || pieces[k][l].piece == "rook" || pieces[k][l].piece == "queen") && pieces[k][l].color == oppcolor) {
 		    cont = true;
 		} else {
 		    stop = true;
 		}
+	    }
 	} else {
 	    stop = true;
 	}
@@ -373,102 +417,58 @@ function checkBlockCheck(x, y, xd, yd, oppcolor) {
 		pieces[h][g].color != oppcolor && 
 		pieces[h][g].piece != "king") {
 		var i,j;
-		stop = false;
 		i=x;j=y;
-		for (i+=xd;i>0;i+=xd)
-		    if (i<8) {
-			for (j+=yd;j>0;j+=yd)
-			    if (j<8) {
-				if (pieces[i][j].color != null) {
-				    stop = true;
-				    break;
-				}
-				if (validMove(i,j,h,g,oppcolor)) {
-				    return false;
-				} else {
-				    break;
-				}
-			    } else
-				stop = true;
+		while (0<i && 0<j && j<8 && i<8) {
+		    if (validMove(i,j,h,g,oppcolor))
+			return false;
+		    if (pieces[i][j].color != null)
 			break;
-			if (stop) {
-			    stop = false;
-			    break;
-			}
-		    } else
-			break;
+		    i += xd; j += yd;
+		}
 	    }
     return true;
 }
 
 function checkCheckmate(x, y, oppcolor) {
-    if (0 < x) {
-	if (0 < y)
-	    if (pieces[x-1][y-1].color == null || pieces[x-1][y-1].color == oppcolor)
-		if (checkCheck(x-1, y-1, oppcolor) < 2) {
-		    if (!checkCheck(x-1, y-1, oppcolor))
-			return false;
-		    if (!checkBlockCheck(x, y, -1,-1, oppcolor))
-			return false;
-		}
-	if (pieces[x-1][y].color == null || pieces[x-1][y].color == oppcolor)
-	    if (checkCheck(x-1,y,oppcolor) < 2) {
-		if (!checkCheck(x-1,y,oppcolor))
-		    return false;
-		if (!checkBlockCheck(x, y, -1, 0, oppcolor))
-		    return false;
-	    }
-	if (y < 7)
-	    if (pieces[x-1][y+1].color == null || pieces[x-1][y+1].color == oppcolor)
-		if (checkCheck(x-1,y+1, oppcolor) < 2) {
-		    if (!checkCheck(x-1, y+1, oppcolor))
-			return false;
-		    if (!checkBlockCheck(x, y, -1,1, oppcolor))
-			return false;
-		}
-    }
-    if (x < 7) {
-	if (0 < y)
-	    if (pieces[x+1][y-1].color == null || pieces[x+1][y-1].color == oppcolor)
-		if (checkCheck(x+1,y-1, oppcolor) < 2) {
-		    if (!checkCheck(x+1, y-1, oppcolor))
-			return false;
-		    if (!checkBlockCheck(x, y, 1,-1, oppcolor))
-			return false;
-		}
-	if (pieces[x+1][y].color == null || pieces[x+1][y].color == oppcolor )
-	    if (checkCheck(x+1,y,oppcolor) < 2) {
-		if (!checkCheck(x+1,y,oppcolor))
-		    return false;
-		if (!checkBlockCheck(x, y, 1, 0, oppcolor))
-		    return false;
-	    }
-	if (y < 7)
-	    if (pieces[x+1][y+1].color == null || pieces[x+1][y+1].color == oppcolor)
-		if (checkCheck(x+1, y+1) < 2) {
-		    if (!checkCheck(x+1, y+1, oppcolor))
-			return false;
-		    if (!checkBlockCheck(x, y, 1, 1, oppcolor))
-			return false;
-		}
-    }
+    var samecolor
+    if (oppcolor == "white")
+	samecolor = "black";
+    else
+	samecolor = "white";
+    var xd = new Array;
+    if (0 < x)
+	xd.push(-1);
+    xd.push(0)
+    if (x < 7)
+	xd.push(1);
+    var yd = new Array;
     if (0 < y)
-	if (pieces[x][y-1].color == null || pieces[x][y-1].color == oppcolor)
-	    if (checkCheck(x, y-1, oppcolor) < 2) {
-		if (!checkCheck(x, y-1, oppcolor))
-		    return false;
-		if (!checkBlockCheck(x, y, 0, -1, oppcolor))
-		    return false;
-	    }
-    if (y < 7) {
-	if (pieces[x][y+1].color == null || pieces[x][y+1].color == oppcolor)
-	    if (checkCheck(x, y+1, oppcolor) < 2) {
-		if (!checkCheck(x, y+1, oppcolor))
-		    return false;
-		if (!checkBlockCheck(x, y, 0, 1, oppcolor))
-		    return false;
-	    }
-    }
+	yd.push(-1);
+    yd.push(0);
+    if (y < 7)
+	yd.push(1);
+    var u,v;
+    for (u in xd)
+	for (v in yd)
+	    if (yd[v] != 0 || xd[u] != 0)
+		if (pieces[x+xd[u]][y+yd[v]].color == null || pieces[x+xd[u]][y+yd[v]].color == oppcolor) {
+		    var isattacked = checkCheck(x+xd[u], y+yd[v], oppcolor);
+		    if (isattacked < 2) {
+			if (!isattacked)
+			    return false;
+			if (!checkBlockCheck(x,y,xd[u],yd[v],oppcolor))
+			    return false;
+		    }
+		    if (pieces[x+xd[u]][y+yd[v]].color == oppcolor &&
+			(((xd[u] == 0 || yd[v] == 0) &&
+			 (pieces[x+xd[u]][y+yd[v]].piece == "rook" ||
+			  pieces[x+xd[u]][y+yd[v]].piece == "queen")) ||
+			 ((xd[u] != 0 && yd[v] != 0) &&
+			  (pieces[x+xd[u]][y+yd[v]].piece == "bishops" ||
+			   pieces[x+xd[u]][y+yd[v]].piece == "queen"))))
+			if (checkCheck(x+xd[u], y+yd[v], samecolor) > 1)
+			    return false;
+		}
     return true;
 }
 
@@ -479,60 +479,60 @@ function checkCheck(x, y, oppcolor) {
     if (0 < x) {
 	if (0 < y)
 	    if (pieces[x-1][y-1].piece == "king" && pieces[x-1][y-1].color == oppcolor)
-		retval += 2;
+		retval += 1;
 	if (pieces[x-1][y].piece == "king" && pieces[x-1][y].color == oppcolor)
-	    retval += 2;
+	    retval += 1;
 	if (y < 7)
 	    if (pieces[x-1][y+1].piece == "king" && pieces[x-1][y+1].color == oppcolor)
-		retval += 2;
+		retval += 1;
     }
     if (x < 7) {
 	if (0 < y)
 	    if (pieces[x+1][y-1].piece == "king" && pieces[x+1][y-1].color == oppcolor)
-		retval += 2;
+		retval += 1;
 	if (pieces[x+1][y].piece == "king" && pieces[x+1][y].color == oppcolor)
-	    retval += 2;
+	    retval += 1;
 	if (y < 7)
 	    if (pieces[x+1][y+1].piece == "king" && pieces[x+1][y+1].color == oppcolor)
-		retval += 2;
+		retval += 1;
     }
     if (0 < y)
 	if (pieces[x][y-1].color == oppcolor && pieces[x][y-1].piece == "king")
-	    retval += 2;
+	    retval += 1;
     if (y < 7)
 	if (pieces[x][y+1].color == oppcolor && pieces[x][y+1].piece == "king")
-	    retval += 2;
+	    retval += 1;
     knightmoves = new Array;
     knightmoves[0] = [1,2];knightmoves[1] = [-1,2];knightmoves[2] = [-1,-2];knightmoves[3] = [1,-2];
     knightmoves[4] = [2,1];knightmoves[5] = [-2,1];knightmoves[6] = [-2,-1];knightmoves[7] = [2,-1];
     for (spot in knightmoves)
 	if (-1 < x+knightmoves[spot][0] && x+knightmoves[spot][0] < 8 && -1 < y+knightmoves[spot][1] && y+knightmoves[spot][1] < 8) {
 	    if (pieces[x+knightmoves[spot][0]][y+knightmoves[spot][1]].color == oppcolor && pieces[x+knightmoves[spot][0]][y+knightmoves[spot][1]].piece == "knight") {
-		retval += 2;
+		retval += 1;
 	    }
 	}
     if (oppcolor == "white" && x+1 < 8) {
 	if (y+1 < 8)
 	    if (pieces[x+1][y+1].piece == "pawn" && pieces[x+1][y+1].color == oppcolor)
-		retval += 2;
+		retval += 1;
 	if (-1 < y-1)
 	    if (pieces[x+1][y-1].piece == "pawn" && pieces[x+1][y-1].color == oppcolor)
-		retval += 2;
+		retval += 1;
     }
     if (oppcolor == "black" && x > 0) {
 	if (y+1 < 8)
 	    if (pieces[x-1][y+1].piece == "pawn" && pieces[x-1][y+1].color == oppcolor)
-		retval += 2;
+		retval += 1;
 	if (-1 < y-1)
 	    if (pieces[x-1][y-1].piece == "pawn" && pieces[x-1][y-1].color == oppcolor)
-		retval += 2;
+		retval += 1;
     }
     i=x+1;
     j=y+1;
     while(-1<i && i<8 && -1<j && j<8) {
 	if (pieces[i][j].color == oppcolor)
 	    if (pieces[i][j].piece == "bishop" || pieces[i][j].piece == "queen")
-		retval += 1.9;
+		retval += 1;
 	if (pieces[i][j].color != null)
 	    break;
 	i++;
@@ -543,7 +543,7 @@ function checkCheck(x, y, oppcolor) {
     while(-1<i && i<8 && -1<j && j<8) {
 	if (pieces[i][j].color == oppcolor)
 	    if (pieces[i][j].piece == "bishop" || pieces[i][j].piece == "queen")
-		retval += 1.9;
+		retval += 1;
 	if (pieces[i][j].color != null)
 	    break;
 	i++;
@@ -554,7 +554,7 @@ function checkCheck(x, y, oppcolor) {
     while(-1<i && i<8 && -1<j && j<8) {
 	if (pieces[i][j].color == oppcolor)
 	    if (pieces[i][j].piece == "bishop" || pieces[i][j].piece == "queen")
-		retval += 1.9;
+		retval += 1;
 	if (pieces[i][j].color != null)
 	    break;
 	i--;
@@ -565,7 +565,7 @@ function checkCheck(x, y, oppcolor) {
     while(-1<i && i<8 && -1<j && j<8) {
 	if (pieces[i][j].color == oppcolor)
 	    if (pieces[i][j].piece == "bishop" || pieces[i][j].piece == "queen")
-		retval += 1.9;
+		retval += 1;
 	if (pieces[i][j].color != null)
 	    break;
 	i--;
@@ -575,7 +575,7 @@ function checkCheck(x, y, oppcolor) {
     for (i=x+1;-1<i && i<8;i++) {
 	if (pieces[i][j].color == oppcolor)
 	    if (pieces[i][j].piece == "rook" || pieces[i][j].piece == "queen")
-		retval += 1.9;
+		retval += 1;
 	if (pieces[i][j].color != null)
 	    break;
     }
@@ -583,7 +583,7 @@ function checkCheck(x, y, oppcolor) {
     for (i=y+1;-1<i && i<8;i++) {
 	if (pieces[j][i].color == oppcolor)
 	    if (pieces[j][i].piece == "rook" || pieces[j][i].piece == "queen")
-		retval +=1.9;
+		retval += 1;
 	if (pieces[j][i].color != null)
 	    break;
     }
@@ -591,7 +591,7 @@ function checkCheck(x, y, oppcolor) {
     for (i=x-1;-1<i && i<8;i--) {
 	if (pieces[i][j].color == oppcolor)
 	    if (pieces[i][j].piece == "rook" || pieces[i][j].piece == "queen")
-		retval += 1.9;
+		retval += 1;
 	if (pieces[i][j].color != null)
 	    break;
     }
@@ -599,7 +599,7 @@ function checkCheck(x, y, oppcolor) {
     for (i=y-1;-1<i && i<8;i--) {
 	if (pieces[j][i].color == oppcolor)
 	    if (pieces[j][i].piece == "rook" || pieces[j][i].piece == "queen")
-		retval += 1.9;
+		retval += 1;
 	if (pieces[j][i].color != null)
 	    break;
     }

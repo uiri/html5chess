@@ -1,6 +1,7 @@
 <html>
   <head>
     <title>Play Chess</title>
+    <meta name="viewport" content="width=600">
     <style type="text/css">
 	#pieces {
 	    display:none
@@ -151,7 +152,7 @@
 	    reqform.append("white", white);
 	    reqform.append("board", pieces.toSource());
 	    var req = new XMLHttpRequest();
-	    req.open("POST", "https://uiri.servehttp.com/chess/chess.php");
+	    req.open("POST", "https://j.xqz.ca/chess/chess.php");
 	    req.onreadystatechange = function(e) {
 		if (req.readyState == 4) {
 		    /*if (req.response.player1 == name) {
@@ -195,11 +196,11 @@
 		    samecolor = "white";
 		else
 		    samecolor = "black";
-		if (makeMove(squares.one[1], squares.one[0], squares.two[1], squares.two[0],samecolor,false))
-		    if (computerplayer[oppcolor]) {
+		if (makeMove(squares.one[1], squares.one[0], squares.two[1], squares.two[0],samecolor,false,false)) {
+		    if (computerplayer[oppcolor])
 			makeAMoveComputer(!white);
-		    } else
-			white = !(white);
+		    white = !(white);
+		}
 		squares.one = [-1,-1];
 		squares.two = [-1,-1];
 	    } else {
@@ -235,17 +236,25 @@
 	}
 	
 	function makeAMoveComputer(black) {
-	    var oppcolor, samecolor;
+	    var oppcolor;
 	    if (black) {
 		oppcolor = "white";
 	    } else {
 		oppcolor = "black";
 	    }
 	    var mtm = aiMakeMove(oppcolor);
+	    if (oppcolor == "white")
+		oppcolor = "black";
+	    else
+		oppcolor = "white";
 	    if (mtm)
-		if (makeMove(mtm[0],mtm[1],mtm[2],mtm[3],mtm[4],false))
-		    if (computerplayer[oppcolor])
-		        white = !white;
+		if (makeMove(mtm[0],mtm[1],mtm[2],mtm[3],mtm[4],false,true)) {
+		    loadCanvas();
+		    white = !white;
+		    if (computerplayer[oppcolor]) {
+			setTimeout("makeAMoveComputer(white)", 500);
+		    }
+		}
 	    loadCanvas();
 	}
     </script>
