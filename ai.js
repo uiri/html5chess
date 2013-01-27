@@ -33,6 +33,10 @@ function threatenedTotal(samecolor,kx,ky) {
 		mod = 30;
 	    retval += checkCheck(c,d,samecolor)*mod;
 	    retval -= checkCheck(c,d,oppcolor)*mod;
+	    if (pieces[c][d].piece == "king" &&
+		pieces[c][d].color != samecolor)
+		if (checkCheckmate(c,d,samecolor))
+		    retval += 10000000000;
 	}
     return retval;
 }
