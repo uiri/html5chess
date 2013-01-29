@@ -35,8 +35,9 @@ function threatenedTotal(samecolor,kx,ky) {
 	    retval -= checkCheck(c,d,oppcolor)*mod;
 	    if (pieces[c][d].piece == "king" &&
 		pieces[c][d].color != samecolor)
-		if (checkCheckmate(c,d,samecolor))
-		    retval += 10000000000;
+		if (checkCheck(c,d,samecolor))
+		    if (checkCheckmate(c,d,samecolor))
+			retval += 10000000000;
 	}
     return retval;
 }
@@ -67,6 +68,7 @@ function aiMakeMove(samecolor) {
 		ky = d;
 	    }
     var baseline = threatenedTotal(samecolor,kx,ky);
+    var checkmateMoves = new Array();
     var bestMoves = new Array();
     var betterMoves = new Array();
     var okMoves = new Array();
@@ -108,7 +110,11 @@ function aiMakeMove(samecolor) {
 				move.push(e);
 				move.push(f);
 				move.push(samecolor);
-				move.push(threatenedTotal(samecolor));
+				move.push(threatenedTotal(samecolor,kx,ky));
+				if (move[5] > 10000000000) {
+				    checkmateMoves.push(move)
+				    checkmateMoves.sort(function (a,b) { return b[5] - a[5];});
+				}
 				if (myprotection > tkngsq || (tkgapc && (myprotection == tkngsq || itsapawn))) {
 				    var addmove;
 				    addmove = true;
@@ -165,10 +171,10 @@ function aiMakeMove(samecolor) {
 	    pieces[z1][z2].moved = localpieces[z1][z2].moved;
 	}
     }
-    if (bestMoves.length) {
-	console.log(checkCheck(bestMoves[0][2],bestMoves[0][3],samecolor));
+    if (checkmateMoves.length)
+	return checkmateMoves[0];
+    if (bestMoves.length)
 	return bestMoves[0];
-    }
     if (betterMoves.length)
 	return betterMoves[0];
     return okMoves[0];
