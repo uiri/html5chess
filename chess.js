@@ -417,7 +417,7 @@ function checkBlockCheck(x, y, xd, yd, oppcolor) {
 		pieces[h][g].color != oppcolor && 
 		pieces[h][g].piece != "king") {
 		var i,j;
-		i=x;j=y;
+		i=x+xd;j=y+yd;
 		while (0<i && 0<j && j<8 && i<8) {
 		    if (validMove(i,j,h,g,oppcolor))
 			return false;
