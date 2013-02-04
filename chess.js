@@ -133,6 +133,7 @@ function makeMove(x1, y1, x2, y2, oppcolor, sym, ai) {
     checkvar["black"] = false;
     checkvar["white"] = false;
     var checkmate = false;
+    var stalemate = false;
     if (checkCheck(blackkingcoord[0], blackkingcoord[1], "white")) {
 	checkvar["black"] = true;
     }
@@ -146,6 +147,8 @@ function makeMove(x1, y1, x2, y2, oppcolor, sym, ai) {
     pieces[blackkingcoord[0]][blackkingcoord[1]].piece = null;
     if (checkCheckmate(blackkingcoord[0], blackkingcoord[1], "white"))
 	checkmate = true;
+    if (!checkvar["black"] && checkmate)
+	stalemate = true;
     pieces[blackkingcoord[0]][blackkingcoord[1]].piece = oldking.piece;
     pieces[blackkingcoord[0]][blackkingcoord[1]].color = oldking.color;
     if (!checkmate) {
@@ -159,6 +162,8 @@ function makeMove(x1, y1, x2, y2, oppcolor, sym, ai) {
 	pieces[whitekingcoord[0]][whitekingcoord[1]].piece = oldking.piece;
 	pieces[whitekingcoord[0]][whitekingcoord[1]].color = oldking.color;
     }
+    if (!checkvar["white"] && checkmate && !stalemate)
+	stalemate = true;
     if (pieces[x2][y2].piece == "king")
 	if (Math.abs(y2-y1) == 2) {
 	    var i;
@@ -223,15 +228,16 @@ function makeMove(x1, y1, x2, y2, oppcolor, sym, ai) {
 	oppcolor = "black";
     else
 	oppcolor = "white";
-    if (checkmate && !sym) {
-	if (checkvar["white"])
-	    alert("Checkmate. Black wins.");
-	else if (checkvar["black"])
-	    alert("Checkmate. White wins.");
-    } else {
-	if (checkvar[oppcolor] && !sym)
+    if (!sym)
+	if (checkmate) {
+	    if (checkvar["white"])
+		alert("Checkmate. Black wins.");
+	    else if (checkvar["black"])
+		alert("Checkmate. White wins.");
+	} else if (stalemate) {
+	    alert("Stalemate");
+	} else if (checkvar[oppcolor])
 	    alert(oppcolor[0].toUpperCase()+oppcolor.slice(1)+" is in check");
-    }
     return true;
 }
 
