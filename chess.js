@@ -228,17 +228,42 @@ function makeMove(x1, y1, x2, y2, oppcolor, sym, ai) {
 	oppcolor = "black";
     else
 	oppcolor = "white";
-    if (!sym)
-	if (checkmate) {
-	    if (checkvar["white"])
-		alert("Checkmate. Black wins.");
-	    else if (checkvar["black"])
-		alert("Checkmate. White wins.");
-	} else if (stalemate) {
+    if (!sym) {
+	if (checkmate && checkvar["white"])
+	    alert("Checkmate. Black wins.");
+	else if (checkmate && checkvar["black"])
+	    alert("Checkmate. White wins.");
+	else if (stalemate && !canMove(oppcolor))
 	    alert("Stalemate");
-	} else if (checkvar[oppcolor])
+	else if (checkvar[oppcolor])
 	    alert(oppcolor[0].toUpperCase()+oppcolor.slice(1)+" is in check");
+    }
     return true;
+}
+
+function canMove(color) {
+    var a,b, colorpieces;
+    colorpieces = new Array();
+    for (a=0;a<8;a++)
+	for (b=0;b<8;b++)
+	    if (pieces[a][b].color == color)
+		colorpieces.push([a, b]);
+    if (colorpieces.length == 1)
+	return true;
+    else {
+	for (colorpiece in colorpieces) {
+	    var c = colorpieces[colorpiece][0];
+	    var d = colorpieces[colorpiece][1];
+	    if (pieces[c][d].piece != "king") {
+		if (pieces[c][d].piece != "pawn")
+		    return true;
+		if ((color == "black" && pieces[c+1][d].piece != null) ||
+		    (color == "white" && pieces[c-1][d].piece != null))
+		    return true;
+	    }
+	}	
+    }
+    return false;
 }
 
 function validMove(x,y,a,b,oppcolor) {
