@@ -233,7 +233,7 @@ function makeMove(x1, y1, x2, y2, oppcolor, sym, ai) {
 	    alert("Checkmate. Black wins.");
 	else if (checkmate && checkvar["black"])
 	    alert("Checkmate. White wins.");
-	else if (stalemate && !canMove(oppcolor))
+	else if (stalemate && cantMove(oppcolor))
 	    alert("Stalemate");
 	else if (checkvar[oppcolor])
 	    alert(oppcolor[0].toUpperCase()+oppcolor.slice(1)+" is in check");
@@ -241,7 +241,7 @@ function makeMove(x1, y1, x2, y2, oppcolor, sym, ai) {
     return true;
 }
 
-function canMove(color) {
+function cantMove(color) {
     var a,b, colorpieces;
     colorpieces = new Array();
     for (a=0;a<8;a++)
@@ -256,7 +256,7 @@ function canMove(color) {
 	    var d = colorpieces[colorpiece][1];
 	    if (pieces[c][d].piece != "king") {
 		if (pieces[c][d].piece != "pawn")
-		    return true;
+		    return false;
 		if ((color == "black" && pieces[c+1][d].piece != null) ||
 		    (color == "white" && pieces[c-1][d].piece != null))
 		    return true;
