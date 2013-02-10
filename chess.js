@@ -467,39 +467,52 @@ function checkCheckmate(x, y, oppcolor) {
     else
 	samecolor = "white";
     var xd = new Array;
-    if (0 < x)
+    if (0 < x) {
+	if (1 < x)
+	    xd.push(-2);
 	xd.push(-1);
+    }
     xd.push(0)
-    if (x < 7)
+    if (x < 7) {
 	xd.push(1);
+	if (x < 6)
+	    xd.push(2);
+    }
     var yd = new Array;
-    if (0 < y)
+    if (0 < y) {
+	if (1 < y)
+	    yd.push(-2);
 	yd.push(-1);
+    }
     yd.push(0);
-    if (y < 7)
+    if (y < 7) {
 	yd.push(1);
+	if (y < 6)
+	    yd.push(2);
+    }
     var u,v;
     for (u in xd)
 	for (v in yd)
 	    if (yd[v] != 0 || xd[u] != 0)
-		if (pieces[x+xd[u]][y+yd[v]].color == null || pieces[x+xd[u]][y+yd[v]].color == oppcolor) {
-		    var isattacked = checkCheck(x+xd[u], y+yd[v], oppcolor);
-		    if (isattacked < 2) {
-			if (!isattacked)
-			    return false;
-			if (!checkBlockCheck(x,y,xd[u],yd[v],oppcolor))
-			    return false;
+		if (Math.abs(xd[u]) + Math.abs(yd[v]) != 4)
+		    if (pieces[x+xd[u]][y+yd[v]].color == null || pieces[x+xd[u]][y+yd[v]].color == oppcolor) {
+			var isattacked = checkCheck(x+xd[u], y+yd[v], oppcolor);
+			if (isattacked < 2) {
+			    if (!isattacked)
+				return false;
+			    if (!checkBlockCheck(x,y,xd[u],yd[v],oppcolor))
+				return false;
+			}
+			if (pieces[x+xd[u]][y+yd[v]].color == oppcolor &&
+			    (((xd[u] == 0 || yd[v] == 0) &&
+			      (pieces[x+xd[u]][y+yd[v]].piece == "rook" ||
+			       pieces[x+xd[u]][y+yd[v]].piece == "queen")) ||
+			     ((xd[u] != 0 && yd[v] != 0) &&
+			      (pieces[x+xd[u]][y+yd[v]].piece == "bishops" ||
+			       pieces[x+xd[u]][y+yd[v]].piece == "queen"))))
+			    if (checkCheck(x+xd[u], y+yd[v], samecolor) > 1)
+				return false;
 		    }
-		    if (pieces[x+xd[u]][y+yd[v]].color == oppcolor &&
-			(((xd[u] == 0 || yd[v] == 0) &&
-			 (pieces[x+xd[u]][y+yd[v]].piece == "rook" ||
-			  pieces[x+xd[u]][y+yd[v]].piece == "queen")) ||
-			 ((xd[u] != 0 && yd[v] != 0) &&
-			  (pieces[x+xd[u]][y+yd[v]].piece == "bishops" ||
-			   pieces[x+xd[u]][y+yd[v]].piece == "queen"))))
-			if (checkCheck(x+xd[u], y+yd[v], samecolor) > 1)
-			    return false;
-		}
     return true;
 }
 
