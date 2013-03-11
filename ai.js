@@ -173,6 +173,18 @@ function aiMakeMove(samecolor) {
     }
     if (checkmateMoves.length)
 	return checkmateMoves[0];
+    var thebestmove = null;
+    for (e in bestMoves)
+	if (e)
+	    if (bestMoves[e][2] == bestMoves[0][2] && 
+		bestMoves[e][3] == bestMoves[0][3])
+		if (piecevalues[pieces[bestMoves[e][0]][bestMoves[e][1]].piece]
+		    < piecevalues[pieces[bestMoves[0][0]][bestMoves[0][1]].piece]) {
+		    thebestmove = bestMoves[e];
+		    break;
+		}
+    if (thebestmove)
+	return thebestmove;
     if (bestMoves.length)
 	return bestMoves[0];
     if (betterMoves.length)
