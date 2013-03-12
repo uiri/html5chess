@@ -31,8 +31,12 @@ function threatenedTotal(samecolor,kx,ky) {
 		mod = 20;
 	    if (c == kx && d == ky)
 		mod = 30;
-	    retval += checkCheck(c,d,samecolor)*mod;
-	    retval -= checkCheck(c,d,oppcolor)*mod;
+	    if (checkCheck(c,d,samecolor) > checkCheck(c,d,oppcolor))
+		retval += checkCheck(c,d,samecolor);
+	    else if (checkCheck(c,d,samecolor) < checkCheck(c,d,oppcolor))
+		retval -= checkCheck(c,d,oppcolor);
+	    /*retval += checkCheck(c,d,samecolor)*mod;
+	    retval -= checkCheck(c,d,oppcolor)*mod;*/
 	    if (pieces[c][d].piece == "king" &&
 		pieces[c][d].color != samecolor)
 		if (checkCheck(c,d,samecolor))
@@ -79,6 +83,22 @@ function aiMakeMove(samecolor) {
     piecevalues.rook = 5;
     piecevalues.bishop = 3;
     piecevalues.knight = 3;
+    function lesserValuePiece(arrayofmoves, least) {
+	var retval = null;
+	if (arrayofmoves)
+	    for (e in arrayofmoves)
+		if (e)
+		    if (arrayofmoves[e][2] == arrayofmoves[0][2] &&
+			arrayofmoves[e][3] == arrayofmoves[0][3])
+			if ((least && piecevalues[pieces[arrayofmoves[e][0]][arrayofmoves[e][1]].piece] 
+			    < piecevalues[pieces[arrayofmoves[0][0]][arrayofmoves[0][1]].piece]) || 
+			    (!(least) && piecevalues[pieces[arrayofmoves[e][0]][arrayofmoves[e][1]].piece] 
+			    > piecevalues[pieces[arrayofmoves[0][0]][arrayofmoves[0][1]].piece])) {
+			    retval = bestMoves[e];
+			    break;
+			}
+	return retval;
+    }
     for (c=0;c<8;c++)
 	for (d=0;d<8;d++)
 	    if (pieces[c][d].color == samecolor)
@@ -173,20 +193,14 @@ function aiMakeMove(samecolor) {
     }
     if (checkmateMoves.length)
 	return checkmateMoves[0];
-    var thebestmove = null;
-    for (e in bestMoves)
-	if (e)
-	    if (bestMoves[e][2] == bestMoves[0][2] && 
-		bestMoves[e][3] == bestMoves[0][3])
-		if (piecevalues[pieces[bestMoves[e][0]][bestMoves[e][1]].piece]
-		    < piecevalues[pieces[bestMoves[0][0]][bestMoves[0][1]].piece]) {
-		    thebestmove = bestMoves[e];
-		    break;
-		}
+    var thebestmove = lesserValuePiece(bestMoves, true);
     if (thebestmove)
 	return thebestmove;
     if (bestMoves.length)
 	return bestMoves[0];
+    thebestmove = lesserValuePiece(betterMoves, false);
+    if (thebestmove)
+	return thebestmove;
     if (betterMoves.length)
 	return betterMoves[0];
     return okMoves[0];
