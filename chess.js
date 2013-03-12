@@ -494,7 +494,9 @@ function checkCheckmate(x, y, oppcolor) {
     for (u in xd)
 	for (v in yd)
 	    if (yd[v] != 0 || xd[u] != 0)
-		if (Math.abs(xd[u]) + Math.abs(yd[v]) != 4)
+		if (Math.abs(xd[u]) + Math.abs(yd[v]) != 4 || 
+		    !(Math.abs(xd[u]) + Math.abs(yd[v]) == 3 && 
+		      pieces[x+xd[u]][y+yd[v]].piece != "knight"))
 		    if (pieces[x+xd[u]][y+yd[v]].color == null || pieces[x+xd[u]][y+yd[v]].color == oppcolor) {
 			var isattacked = checkCheck(x+xd[u], y+yd[v], oppcolor);
 			if (isattacked < 2) {
