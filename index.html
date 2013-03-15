@@ -12,6 +12,9 @@
     </style>
     <script type="text/javascript" src="chess.js"></script>
     <script type="text/javascript" src="ai.js"></script>
+    <script type='text/javascript' src='https://cdn.firebase.com/v0/firebase.js'>
+    </script>
+    <script type="text/javascript" src="multiplayer.js"></script>
     <script type="text/javascript">
     /* Copyright 2012-2013 Uiri Noyb
        This program is free software: you can redistribute it and/or modify
@@ -33,7 +36,6 @@
 	var computerplayer = new Object();
 	computerplayer.white = false;
 	computerplayer.black = false;
-	var connected = false;
 	var stack = new Array;
 	var restack = new Array;
 	var squares = new Object;
@@ -53,7 +55,9 @@
 	}
 
 	function undo() {
-	    if (stack.length > 0) {
+	    if (connected)
+		alert("Can't undo online");
+	    else if (stack.length > 0) {
 		restack.push(pieces);
 		var undoobj = stack.pop();
 		pieces = undoobj;
@@ -65,7 +69,9 @@
 	}
 
 	function redo() {
-	    if (restack.length > 0) {
+	    if (connected)
+		alert("Can't redo online");
+	    else if (restack.length > 0) {
 		stack.push(pieces);
 		var redoobj = restack.pop();
 		pieces = redoobj;
@@ -99,6 +105,7 @@
 	    if (pieces[x][y].color && pieces[x][y].piece) {
 		context.drawImage(document.getElementById(pieces[x][y].color+pieces[x][y].piece), y*50, x*50)
 	    }
+
 	}
 
 	function loadCanvas() {
@@ -134,41 +141,6 @@
 	    context.fill();
 	}
 	
-	/*function connect() {
-	    var invalidname = true;
-	    var re = new RegExp("^[A-Za-z 0-9]+$");
-	    var multiple = 0;
-	    do {
-		if (multiple)
-		    var name = prompt("Your name can only contain letters, numbers and spaces");
-		else
-		    var name = prompt("Please enter your name:");
-		if (name.match(re))
-		    invalidname = false;
-		multiple++;
-	    } while (invalidname)
-	    var reqform = new FormData;
-	    reqform.append("player1", name);
-	    reqform.append("white", white);
-	    reqform.append("board", pieces.toSource());
-	    var req = new XMLHttpRequest();
-	    req.open("POST", "https://j.xqz.ca/chess/chess.php");
-	    req.onreadystatechange = function(e) {
-		if (req.readyState == 4) {
-		    /*if (req.response.player1 == name) {
-			alert("You are now playing "+req.response.player2+". It is your move; you are white");
-		    } else if (req.response.player2 == name) {
-			alert("You are playing "+req.response.player1+". You are black.");
-			document.getElementById("colour").innerHTML = "black";
-		    } else {
-			alert("Something has gone seriously wrong!");
-		    }
-		    document.getElementById("json").innerHTML = req.toSource();
-		}
-            }
-	    req.send(reqform);
-	}*/
-
 	function clickMe(e) {
 	    var x = e.pageX;
 	    var y = e.pageY;
@@ -183,6 +155,8 @@
 		y -= 1;
 	    x /= 50;
 	    y /= 50;
+	    if (freeze)
+		return;
 	    if (squares.one[0] == -1) {
 		if (pieces[y][x].color != null && pieces[y][x].color != oppcolor) {
 		    squares.one = [x,y];
@@ -197,9 +171,16 @@
 		else
 		    samecolor = "black";
 		if (makeMove(squares.one[1], squares.one[0], squares.two[1], squares.two[0],samecolor,false,false)) {
-		    if (computerplayer[oppcolor])
-			makeAMoveComputer(!white);
-		    white = !(white);
+		    if (connected) {
+			game.pieces = pieces;
+			game.enpassant = enpassant;
+			gameRef.set(game);
+			freeze = true;
+		    } else {
+			if (computerplayer[oppcolor])
+			    makeAMoveComputer(!white);
+			white = !(white);
+		    }
 		}
 		squares.one = [-1,-1];
 		squares.two = [-1,-1];
@@ -257,19 +238,83 @@
 		}
 	    loadCanvas();
 	}
+
+	function addToGameList(newgame) {
+	    var rootdiv = document.getElementById('gamelist');
+	    if (gameRef)
+		if (newgame.name() == gameRef.name()) {
+		    return;
+		} else
+		    alert(newgame.name() + " is not equal to " + gameRef.name());
+	    var gamediv = '<div id="'+newgame.name()+'">';
+	    gamediv += '<input onClick=connectGame(';
+	    gamediv += '"https://chess.firebaseio.com/waitinglist/'+newgame.name();
+	    gamediv += '") type=button value=Play> ';
+	    var playcolor;
+	    if (newgame.val()["playwhite"])
+		playcolor = "black";
+	    else
+		playcolor = "white";
+	    gamediv += 'as '+playcolor;
+	    gamediv += ' against '+newgame.val()["name"];
+	    gamediv += "</div>";
+	    rootdiv.innerHTML += gamediv;
+	}
+
+	function toggleColour() {
+	    if (white)
+		document.getElementById("colour").innerHTML = "white";
+	    else
+		document.getElementById("colour").innerHTML = "black";
+	    white = !white;
+	}
+
+	function removeFromGameList(snapshot) {
+	    var rootdiv = document.getElementById('gamelist');
+	    var deaddiv = document.getElementById(snapshot.name());
+	    rootdiv.removeChild(deaddiv);
+	}
+
+	function connect() {
+	    document.getElementById('notconnected').style.visibility = "hidden";
+	    document.getElementById('newgameform').style.visibility = "";
+	    waitingRef.on('child_added', addToGameList);
+	    waitingRef.on('child_removed', removeFromGameList);
+	    var connectbutton = document.getElementById('connectbutton');
+	    connectbutton.value = "Create Game";
+	    connectbutton.onclick = function () {
+		var newcolour = document.getElementById('newgamecolor').checked;
+		startGame(newcolour);
+	    }
+	}
+
     </script>
   </head>
   <body onLoad="loadCanvas()">
     <canvas onClick="clickMe(event)" id="canvas" width="400" height="400">What? No HTML5? Get Outta here!</canvas>
     <div style='float:left'>
-      <input type="button" onClick="undo();" value="Undo!"><br>
-      <input type="button" onClick="redo();" value="Redo!"><br>
-      Computer Player<br>
-      <label for="compboxwhite">White</label><input onClick="toggleComputerPlayer('white')" type="checkbox" id="compboxwhite">&nbsp;&nbsp;<label for="compboxblack">Black</label><input onClick="toggleComputerPlayer('black')" type="checkbox" id="compboxblack"><br>
-      <input type="button" onClick="makeAMoveComputer(white);" value="Make A Move, Computer!">
-      <!--<input type="button" onClick="connect();" value="Connect!"><br>
-      You are <span id="colour">white</span> -->
-      <span id="json"></span>
+      <div id="notconnected">
+	<input type="button" onClick="undo();" value="Undo!"><br>
+	<input type="button" onClick="redo();" value="Redo!"><br>
+	Computer Player<br>
+	<label for="compboxwhite">White</label>
+	<input onClick="toggleComputerPlayer('white')" type="checkbox" id="compboxwhite">
+	&nbsp;&nbsp;<label for="compboxblack">Black</label>
+	<input onClick="toggleComputerPlayer('black')" type="checkbox" id="compboxblack"><br>
+	<input type="button" onClick="makeAMoveComputer(white);" value="Make A Move, Computer!">
+      </div>
+      <div id="newgameform" style="visibility:hidden">
+        <label for="playername">Name: </label>
+	<input type="text" id="playername" value=""><br>
+	<label for="newgamecolor">Play as White?</label>
+	<input onClick="toggleColour()" type="checkbox" id="newgamecolor" checked=true>
+      </div>
+      <input type="button" onClick="connect();" value="Connect!" id='connectbutton'><br>
+      <span id="connectednow" style="display:none">
+	You are <span id="colour">white</span>
+      </span>
+    </div>
+    <div id='gamelist'>
     </div>
     <div id='pieces'>
       <img id="blackking" src="/chess/blackking.svg">
@@ -285,6 +330,19 @@
       <img id="whiteknight" src="/chess/whiteknight.svg">
       <img id="whitepawn" src="/chess/whitepawn.svg">
     </div>
-    <script>computerplayer.white = document.getElementById("compboxwhite").checked;computerplayer.black = document.getElementById("compboxblack").checked;</script>
+    <script>
+        computerplayer.white = document.getElementById("compboxwhite").checked;
+        computerplayer.black = document.getElementById("compboxblack").checked;
+	window.addEventListener('beforeunload', function(e) {
+	    if (connected)
+		return "You are in the middle of a game. Are you sure you want to leave?";
+	    else if (gameRef)
+		return "You are waiting for an opponent. Are you sure you want to leave?";
+	});
+	window.addEventListener('unload', function(e) {
+	    if (gameRef)
+		gameRef.remove();
+	});
+    </script>
   </body>
 </html>

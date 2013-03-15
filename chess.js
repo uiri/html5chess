@@ -16,6 +16,7 @@
 */ 
 
 var enpassant = new Object;
+enpassant.fire = "base";
 var pieces = new Array;
 var r = 0;
 for (r=0;r<8;r++) {
@@ -120,6 +121,7 @@ function makeMove(x1, y1, x2, y2, oppcolor, sym, ai) {
 	    pieces[x2+k][y2].color = null;
 	}
 	enpassant = new Object;
+	enpassant.fire = "base";
 	if (Math.abs(x2 - x1) == 2) {
 	    if (0 < y2)
 		if (pieces[x2][y2-1].piece == "pawn")
