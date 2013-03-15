@@ -35,6 +35,10 @@ function changeGame(snapshot) {
 	gameRef = undefined;
 	freeze = false;
 	connected = false;
+	var i;
+	for (i=0;i<stack.length;)
+	    undo();
+	loadCanvas();
 	return;
     }
     if (freeze && stack.length != 0)
@@ -56,6 +60,7 @@ function blackPlayerSetup(playwhite) {
     } else {
 	white = true;
 	freeze = false;
+	stack.push(pieces);
     }
     document.getElementById("connectednow").style.display = "";
 }
