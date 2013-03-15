@@ -39,8 +39,10 @@ function changeGame(snapshot) {
     }
     if (freeze && stack.length != 0)
 	freeze = false;
-    if (data.pieces != pieces)
+    if (data.pieces != pieces) {
 	pieces = negOneToNull(data.pieces);
+	stack.push(pieces);
+    }
     if (data.enpassant != enpassant)
 	enpassant = data.enpassant;
     loadCanvas();
