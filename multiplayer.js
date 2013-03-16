@@ -75,6 +75,7 @@ function playerTwoMove(snapshot) {
 	gameRef = new Firebase(data.newloc);
 	connected = true;
 	gameRef.on('value', changeGame);
+	gameRef.onDisconnect().remove();
 	blackPlayerSetup(!game.playwhite)
     }
 }
@@ -91,6 +92,7 @@ function playerOneMove(snapshot) {
 	    gameRef = playingGameRef;
 	    connected = true;
 	    gameRef.on('value', changeGame);
+	    gameRef.onDisconnect().remove();
 	    blackPlayerSetup(game.playwhite);
 	}
 }
@@ -112,7 +114,9 @@ function startGame(playwhite) {
     game.checkvar["black"] = false;
     game.checkmate = false;
     game.playwhite = white;
-    game.pieces = nullToNegOne(pieces);
+    nullToNegOne(pieces);
+    game.pieces = pieces;
+    negOneToNull(pieces);
     game.enpassant = enpassant;
     game.players = 1;
     game.name = name;
@@ -120,6 +124,7 @@ function startGame(playwhite) {
     game.stalemate = false;
     gameRef = waitingRef.push(game);
     gameRef.on('value', playerOneMove);
+    gameRef.onDisconnect().remove();
 }
 
 function connectGame(refstr) {
@@ -138,6 +143,7 @@ function connectGame(refstr) {
 		white = false;
 	    gameRef.set(game);
 	    gameRef.on('value', playerTwoMove);
+	    gameRef.onDisconnect().remove();
 	}
     }
     gamereq.send()

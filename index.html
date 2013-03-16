@@ -333,16 +333,6 @@
     <script>
         computerplayer.white = document.getElementById("compboxwhite").checked;
         computerplayer.black = document.getElementById("compboxblack").checked;
-	window.addEventListener('beforeunload', function(e) {
-	    if (connected)
-		return "You are in the middle of a game. Are you sure you want to leave?";
-	    else if (gameRef)
-		return "You are waiting for an opponent. Are you sure you want to leave?";
-	});
-	window.addEventListener('unload', function(e) {
-	    if (gameRef)
-		gameRef.remove();
-	});
     </script>
   </body>
 </html>
