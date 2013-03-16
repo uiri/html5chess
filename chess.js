@@ -231,16 +231,26 @@ function makeMove(x1, y1, x2, y2, oppcolor, sym, ai) {
     else
 	oppcolor = "white";
     if (!sym) {
-	if (checkmate && checkvar["white"])
-	    alert("Checkmate. Black wins.");
-	else if (checkmate && checkvar["black"])
-	    alert("Checkmate. White wins.");
-	else if (stalemate && cantMove(oppcolor))
-	    alert("Stalemate");
-	else if (checkvar[oppcolor])
-	    alert(oppcolor[0].toUpperCase()+oppcolor.slice(1)+" is in check");
+	checkAlerts(oppcolor, checkmate, stalemate, checkvar);
+    }
+    if (connected) {
+	game.checkvar = checkvar;
+	game.checkmate = checkmate;
+	game.stalemate = stalemate;
+	game.oppcolor = oppcolor;
     }
     return true;
+}
+
+function checkAlerts(oppcolor, checkmate, stalemate, checkvar) {
+    if (checkmate && checkvar["white"])
+	alert("Checkmate. Black wins.");
+    else if (checkmate && checkvar["black"])
+	alert("Checkmate. White wins.");
+    else if (stalemate && cantMove(oppcolor))
+	alert("Stalemate");
+    else if (checkvar[oppcolor])
+	alert(oppcolor[0].toUpperCase()+oppcolor.slice(1)+" is in check");
 }
 
 function cantMove(color) {

@@ -49,6 +49,8 @@ function changeGame(snapshot) {
     }
     if (data.enpassant != enpassant)
 	enpassant = data.enpassant;
+    checkAlerts(data.oppcolor, data.checkmate, data.stalemate, data.checkvar);
+    game = data;
     loadCanvas();
 }
 
@@ -105,12 +107,17 @@ function startGame(playwhite) {
     }
     game = new Object();
     white = playwhite
+    game.checkvar = new Object();
+    game.checkvar["white"] = false;
+    game.checkvar["black"] = false;
+    game.checkmate = false;
     game.playwhite = white;
     game.pieces = nullToNegOne(pieces);
     game.enpassant = enpassant;
     game.players = 1;
     game.name = name;
     game.newloc = false;
+    game.stalemate = false;
     gameRef = waitingRef.push(game);
     gameRef.on('value', playerOneMove);
 }
