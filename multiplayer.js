@@ -27,6 +27,15 @@ function negOneToNull(mypieces) {
     return mypieces;
 }
 
+function blinkTitle(alttitle) {
+	var timeoutid;
+	timeoutid = setInterval("document.title == 'Play Chess' ? document.title = '"+alttitle+"' : document.title = 'Play Chess';", 750);
+	window.addEventListener('mousemove', function(e) {
+	    clearInterval(timeoutid);
+	    document.title = 'Play Chess';
+	});
+}
+
 function changeGame(snapshot) {
     var data = snapshot.val();
     if (!data) {
@@ -41,8 +50,11 @@ function changeGame(snapshot) {
 	loadCanvas();
 	return;
     }
+    var notfrozen = true;
     if (freeze && stack.length != 0)
 	freeze = false;
+    else
+	notfrozen = false;
     if (data.pieces != pieces) {
 	pieces = negOneToNull(data.pieces);
 	stack.push(pieces);
@@ -52,12 +64,9 @@ function changeGame(snapshot) {
     checkAlerts(data.oppcolor, data.checkmate, data.stalemate, data.checkvar);
     game = data;
     loadCanvas();
-    var timeoutid;
-    timeoutid = setInterval("document.title == 'Play Chess' ? document.title = 'Opponent Moved' : document.title = 'Play Chess';", 750);
-    window.addEventListener('mousemove', function(e) {
-	clearInterval(timeoutid);
-	document.title = 'Play Chess';
-    });
+    if (notfrozen) {
+	blinkTitle('Opponent Moved');
+    }
 }
 
 function blackPlayerSetup(playwhite) {
@@ -82,7 +91,7 @@ function playerTwoMove(snapshot) {
 	connected = true;
 	gameRef.on('value', changeGame);
 	gameRef.onDisconnect().remove();
-	blackPlayerSetup(!game.playwhite)
+	blackPlayerSetup(!game.playwhite);
     }
 }
 
@@ -100,6 +109,7 @@ function playerOneMove(snapshot) {
 	    gameRef.on('value', changeGame);
 	    gameRef.onDisconnect().remove();
 	    blackPlayerSetup(game.playwhite);
+	    blinkTitle('Opponent joined');
 	}
 }
 
