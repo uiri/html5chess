@@ -36,18 +36,28 @@ function blinkTitle(alttitle) {
 	});
 }
 
+function endGame() {
+    game = undefined;
+    gameRef = undefined;
+    freeze = false;
+    connected = false;
+    var i;
+    for (i=0;i<stack.length;)
+	undo();
+    loadCanvas();
+    document.getElementById('connectednow').style.visibility = "hidden";
+    document.getElementById('notconnected').style.visibility = "";
+    document.getElementById('newgameform').style.visibility = "hidden";
+}
+
 function changeGame(snapshot) {
     var data = snapshot.val();
     if (!data) {
-	alert("Something went wrong. Maybe your partner disconnected.");
-	game = undefined;
-	gameRef = undefined;
-	freeze = false;
-	connected = false;
-	var i;
-	for (i=0;i<stack.length;)
-	    undo();
-	loadCanvas();
+	if (game.checkmate)
+	    alert("You won! Congrats!");
+	else
+	    alert("Something went wrong. Maybe your partner disconnected.");
+	endGame();
 	return;
     }
     var notfrozen = true;
@@ -67,14 +77,20 @@ function changeGame(snapshot) {
     if (notfrozen) {
 	blinkTitle('Opponent Moved');
     }
+    if (game.checkmate) {
+	gameRef.off('value', changeGame);
+	gameRef.remove();
+	endGame();
+    }
 }
 
-function blackPlayerSetup(playwhite) {
+function playerSetup(playwhite) {
     if (!playwhite) {
 	document.getElementById("colour").innerHTML = "black";
 	white = false;
 	freeze = true;
     } else {
+	document.getElementById("colour").innerHTML = "white";
 	white = true;
 	freeze = false;
 	stack.push(pieces);
@@ -91,7 +107,7 @@ function playerTwoMove(snapshot) {
 	connected = true;
 	gameRef.on('value', changeGame);
 	gameRef.onDisconnect().remove();
-	blackPlayerSetup(!game.playwhite);
+	playerSetup(!game.playwhite);
     }
 }
 
@@ -108,7 +124,7 @@ function playerOneMove(snapshot) {
 	    connected = true;
 	    gameRef.on('value', changeGame);
 	    gameRef.onDisconnect().remove();
-	    blackPlayerSetup(game.playwhite);
+	    playerSetup(game.playwhite);
 	    blinkTitle('Opponent joined');
 	}
 }
