@@ -52,6 +52,12 @@ function changeGame(snapshot) {
     checkAlerts(data.oppcolor, data.checkmate, data.stalemate, data.checkvar);
     game = data;
     loadCanvas();
+    var timeoutid;
+    timeoutid = setInterval("document.title == 'Play Chess' ? document.title = 'Opponent Moved' : document.title = 'Play Chess';", 750);
+    window.addEventListener('mousemove', function(e) {
+	clearInterval(timeoutid);
+	document.title = 'Play Chess';
+    });
 }
 
 function blackPlayerSetup(playwhite) {
