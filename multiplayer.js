@@ -47,18 +47,16 @@ function endGame() {
     loadCanvas();
     document.getElementById('connectednow').style.visibility = "hidden";
     document.getElementById('notconnected').style.visibility = "";
-    document.getElementById('newgameform').style.visibility = "hidden";
 }
 
 function changeGame(snapshot) {
     var data = snapshot.val();
     if (!data) {
 	if (game.checkmate)
-	    alert("You won! Congrats!");
+	    alert("Game Over.")
 	else
 	    alert("Something went wrong. Maybe your partner disconnected.");
 	endGame();
-	return;
     }
     var notfrozen = true;
     if (freeze && stack.length != 0)
@@ -77,7 +75,7 @@ function changeGame(snapshot) {
     if (notfrozen) {
 	blinkTitle('Opponent Moved');
     }
-    if (game.checkmate) {
+    if (game.checkmate && game.checkvar[game.oppcolor]) {
 	gameRef.off('value', changeGame);
 	gameRef.remove();
 	endGame();
@@ -85,6 +83,7 @@ function changeGame(snapshot) {
 }
 
 function playerSetup(playwhite) {
+    document.getElementById('notconnected').style.visibility = "hidden";
     if (!playwhite) {
 	document.getElementById("colour").innerHTML = "black";
 	white = false;
@@ -153,6 +152,10 @@ function startGame(playwhite) {
     game.players = 1;
     game.name = name;
     game.newloc = false;
+    if (white)
+	game.oppcolor = "black";
+    else
+	game.oppcolor = "white";
     game.stalemate = false;
     gameRef = waitingRef.push(game);
     gameRef.on('value', playerOneMove);

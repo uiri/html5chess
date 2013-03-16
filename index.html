@@ -274,20 +274,6 @@
 	    var deaddiv = document.getElementById(snapshot.name());
 	    rootdiv.removeChild(deaddiv);
 	}
-
-	function connect() {
-	    document.getElementById('notconnected').style.visibility = "hidden";
-	    document.getElementById('newgameform').style.visibility = "";
-	    waitingRef.on('child_added', addToGameList);
-	    waitingRef.on('child_removed', removeFromGameList);
-	    var connectbutton = document.getElementById('connectbutton');
-	    connectbutton.value = "Create Game";
-	    connectbutton.onclick = function () {
-		var newcolour = document.getElementById('newgamecolor').checked;
-		startGame(newcolour);
-	    }
-	}
-
     </script>
   </head>
   <body onLoad="loadCanvas()">
@@ -302,19 +288,21 @@
 	&nbsp;&nbsp;<label for="compboxblack">Black</label>
 	<input onClick="toggleComputerPlayer('black')" type="checkbox" id="compboxblack"><br>
 	<input type="button" onClick="makeAMoveComputer(white);" value="Make A Move, Computer!">
-      </div>
-      <div id="newgameform" style="visibility:hidden">
+      </div><br>
+      <div id="newgameform">
         <label for="playername">Name: </label>
 	<input type="text" id="playername" value=""><br>
 	<label for="newgamecolor">Play as White?</label>
 	<input onClick="toggleColour()" type="checkbox" id="newgamecolor" checked=true>
       </div>
-      <input type="button" onClick="connect();" value="Connect!" id='connectbutton'><br>
+      <input type="button"
+      onClick="startGame(document.getElementById('newgamecolor').checked);" value="Create Game" id='connectbutton'><br>
       <span id="connectednow" style="display:none">
 	You are <span id="colour">white</span>
       </span>
     </div>
     <div id='gamelist'>
+      <h3>Play Online</h3>
     </div>
     <div id='pieces'>
       <img id="blackking" src="/chess/blackking.svg">
@@ -333,6 +321,8 @@
     <script>
         computerplayer.white = document.getElementById("compboxwhite").checked;
         computerplayer.black = document.getElementById("compboxblack").checked;
+        waitingRef.on('child_added', addToGameList);
+        waitingRef.on('child_removed', removeFromGameList);
     </script>
   </body>
 </html>
