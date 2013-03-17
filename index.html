@@ -241,11 +241,6 @@
 
 	function addToGameList(newgame) {
 	    var rootdiv = document.getElementById('gamelist');
-	    if (gameRef)
-		if (newgame.name() == gameRef.name()) {
-		    return;
-		} else
-		    alert(newgame.name() + " is not equal to " + gameRef.name());
 	    var gamediv = '<div id="'+newgame.name()+'">';
 	    gamediv += '<input onClick=connectGame(';
 	    gamediv += '"https://chess.firebaseio.com/waitinglist/'+newgame.name();

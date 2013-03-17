@@ -66,6 +66,13 @@ function promote() { return "queen"; }
 function moveThroughRedo(localpieces) {}
 function fixRedo(castling) {}
 
+function resetBoard() {
+    var i;
+    for (i=0;i<stack.length;)
+	undo();
+    loadCanvas();
+}
+
 function makeMove(x1, y1, x2, y2, oppcolor, sym, ai) {
     var localpieces = new Array;
     var z1, z2;

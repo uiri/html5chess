@@ -41,12 +41,12 @@ function endGame() {
     gameRef = undefined;
     freeze = false;
     connected = false;
-    var i;
-    for (i=0;i<stack.length;)
-	undo();
-    loadCanvas();
+    resetBoard();
     document.getElementById('connectednow').style.visibility = "hidden";
     document.getElementById('notconnected').style.visibility = "";
+    waitingRef.on('child_added', addToGameList);
+    waitingRef.on('child_removed', removeFromGameList);
+    document.getElementById('gamelist').style.visibility = "";
 }
 
 function changeGame(snapshot) {
@@ -57,6 +57,7 @@ function changeGame(snapshot) {
 	else
 	    alert("Something went wrong. Maybe your partner disconnected.");
 	endGame();
+	return;
     }
     var notfrozen = true;
     if (freeze && stack.length != 0)
@@ -69,10 +70,10 @@ function changeGame(snapshot) {
     }
     if (data.enpassant != enpassant)
 	enpassant = data.enpassant;
-    checkAlerts(data.oppcolor, data.checkmate, data.stalemate, data.checkvar);
     game = data;
     loadCanvas();
     if (notfrozen) {
+	checkAlerts(data.oppcolor, data.checkmate, data.stalemate, data.checkvar);
 	blinkTitle('Opponent Moved');
     }
     if (game.checkmate && game.checkvar[game.oppcolor]) {
@@ -83,6 +84,9 @@ function changeGame(snapshot) {
 }
 
 function playerSetup(playwhite) {
+    waitingRef.off('child_added', addToGameList);
+    waitingRef.off('child_removed', removeFromGameList);
+    document.getElementById('gamelist').style.visibility = "hidden";
     document.getElementById('notconnected').style.visibility = "hidden";
     if (!playwhite) {
 	document.getElementById("colour").innerHTML = "black";
@@ -99,6 +103,11 @@ function playerSetup(playwhite) {
 
 function playerTwoMove(snapshot) {
     var data = snapshot.val();
+    if (!data) {
+	alert("Seems "+game.name+" got bored and left");
+	endGame();
+	return;
+    }
     if (data.newloc) {
 	gameRef.off('value', playerTwoMove);
 	gameRef.remove();
@@ -135,8 +144,7 @@ function startGame(playwhite) {
 	return;
     }
     if (stack.length != 0) {
-	alert("You can only start new games");
-	return;
+	resetBoard();
     }
     game = new Object();
     white = playwhite
