@@ -1,0 +1,4 @@
+HTML5 Chess
+===========
+
+Simple chess game written using HTML5 <canvas> and javascript. Has dumb AI, local and networked multiplayer.
