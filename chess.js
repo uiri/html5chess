@@ -535,7 +535,9 @@ function checkCheckmate(x, y, oppcolor) {
 			       pieces[x+xd[u]][y+yd[v]].piece == "queen"))))
 			    if (checkCheck(x+xd[u], y+yd[v], samecolor) > 1)
 				return false;
-		    }
+		    } else {
+                        return false;
+                    }
     return true;
 }
 
